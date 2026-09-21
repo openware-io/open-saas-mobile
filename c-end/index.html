@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+    <meta name="theme-color" content="#f5f6f8" />
+    <meta name="description" content="A380 更多服务前端演示" />
+    <title>A380 更多服务</title>
+    <link rel="stylesheet" href="./styles.css?v=9" />
+    <script defer src="./data.js?v=6"></script>
+    <script defer src="./money.js?v=1"></script>
+    <script defer src="./context.js?v=5"></script>
+    <script defer src="./datetime.js?v=1"></script>
+    <script defer src="./business-hours.js?v=1"></script>
+    <script defer src="./auth-errors.js?v=7"></script>
+    <script defer src="./api-errors.js?v=3"></script>
+    <script defer src="./page-load.js?v=2"></script>
+    <script defer src="./reservation-room.js?v=1"></script>
+    <script defer src="./oauth.js?v=8"></script>
+    <script defer src="./saas.js?v=10"></script>
+    <script defer src="./app.js?v=14"></script>
+  </head>
+  <body>
+    <main id="app" aria-live="polite"></main>
+    <nav class="tab-bar" id="tab-bar" aria-label="底部导航">
+      <button class="tab-item" data-tab="home" aria-label="首页">
+        <span class="tab-icon-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 10.5 12 3l8.5 7.5"/><path d="M5.5 9.5V21h13V9.5M9.5 21v-6h5v6"/></svg></span>
+        <span class="tab-label">首页</span>
+      </button>
+      <button class="tab-item" data-tab="my" aria-label="我的">
+        <span class="tab-icon-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg></span>
+        <span class="tab-label">我的</span>
+      </button>
+    </nav>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

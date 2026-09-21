@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#10182b" />
+  <title>A380 商户端 UI 设计稿</title>
+  <style>
+    :root {
+      --ink: #172033;
+      --muted: #7b8497;
+      --line: #e9eaf0;
+      --paper: #fff;
+      --canvas: #f5f6f8;
+      --night: #10182b;
+      --night-soft: #1a2742;
+      --brand: #f47a47;
+      --brand-dark: #df6130;
+      --brand-soft: #fff1ea;
+      --green: #1e9d6b;
+      --green-soft: #e9f8f1;
+      --blue: #3f6fda;
+      --blue-soft: #edf3ff;
+      --amber: #d78620;
+      --amber-soft: #fff5df;
+      --danger: #d95858;
+      --shadow: 0 10px 30px rgba(25, 35, 58, .07);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { background: #dfe2e8; }
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background: var(--canvas);
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    button { border: 0; color: inherit; font: inherit; cursor: pointer; }
+    .app { min-height: 100vh; padding-bottom: calc(74px + env(safe-area-inset-bottom)); background: var(--canvas); }
+
+    .topbar {
+      position: sticky;
+      z-index: 20;
+      top: 0;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      height: 64px;
+      padding: env(safe-area-inset-top) 16px 0;
+      color: #fff;
+      background: linear-gradient(135deg, #10182b 0%, #172642 100%);
+      box-shadow: 0 5px 18px rgba(14, 25, 47, .16);
+    }
+    .brand-mark {
+      display: grid;
+      flex: 0 0 36px;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      color: white;
+      background: linear-gradient(145deg, #fb9368, #e66435);
+      box-shadow: 0 5px 14px rgba(244,122,71,.28);
+      font-size: 15px;
+      font-weight: 850;
+      letter-spacing: -.5px;
+    }
+    .brand-copy { display: grid; gap: 2px; min-width: 0; }
+    .brand-copy strong { font-size: 15px; line-height: 1.1; letter-spacing: .2px; }
+    .brand-copy small { overflow: hidden; color: rgba(255,255,255,.62); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .store-pill { margin-left: auto; padding: 7px 10px; border: 1px solid rgba(255,255,255,.12); border-radius: 999px; color: rgba(255,255,255,.86); background: rgba(255,255,255,.08); font-size: 11px; }
+
+    main { width: 100%; max-width: 720px; margin: 0 auto; padding: 22px 14px 12px; }
+    .page { display: none; }
+    .page.active { display: block; animation: fade-in .22s ease both; }
+    @keyframes fade-in { from { opacity: 0; transform: translateY(4px); } }
+
+    .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin: 0 2px 19px; }
+    .eyebrow { display: block; margin-bottom: 5px; color: var(--brand-dark); font-size: 10px; font-weight: 800; letter-spacing: 1.7px; }
+    .page-head h1 { font-size: 25px; line-height: 1.1; letter-spacing: -.8px; }
+    .page-head p { margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .create-button { display: flex; align-items: center; gap: 5px; padding: 10px 13px; border-radius: 12px; color: white; background: linear-gradient(135deg, #fb895b, #ee6938); box-shadow: 0 7px 17px rgba(235, 100, 52, .22); font-size: 12px; font-weight: 700; }
+    .create-button b { font-size: 17px; font-weight: 400; line-height: 1; }
+
+    .filters { display: flex; gap: 8px; overflow-x: auto; margin: 0 -14px 15px; padding: 0 14px 3px; scrollbar-width: none; }
+    .filters::-webkit-scrollbar { display: none; }
+    .chip { flex: 0 0 auto; padding: 8px 12px; border: 1px solid transparent; border-radius: 10px; color: #667085; background: #ebecef; font-size: 12px; font-weight: 650; }
+    .chip span { margin-left: 5px; color: #9da3b1; font-size: 10px; }
+    .chip.active { border-color: #ffd4c1; color: var(--brand-dark); background: var(--brand-soft); }
+    .chip.active span { color: var(--brand); }
+
+    .list { display: grid; gap: 12px; }
+    .card { overflow: hidden; border: 1px solid rgba(22,32,51,.045); border-radius: 18px; background: var(--paper); box-shadow: var(--shadow); }
+
+    .order-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 15px 15px 13px; }
+    .order-no { display: grid; gap: 3px; }
+    .order-no small { color: #9aa1af; font-size: 9px; font-weight: 700; letter-spacing: 1px; }
+    .order-no strong { font-size: 13px; letter-spacing: .1px; }
+    .status { display: flex; align-items: center; gap: 6px; padding: 6px 9px; border-radius: 999px; font-size: 10px; font-weight: 750; }
+    .status::before { width: 5px; height: 5px; border-radius: 50%; background: currentColor; content: ""; }
+    .status.serving { color: var(--blue); background: var(--blue-soft); }
+    .status.waiting { color: var(--amber); background: var(--amber-soft); }
+    .status.done { color: var(--green); background: var(--green-soft); }
+
+    .scene { display: flex; align-items: center; gap: 10px; margin: 0 15px 13px; padding: 10px 12px; border-radius: 12px; background: #f6f7f9; }
+    .scene-icon { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 9px; color: var(--brand-dark); background: var(--brand-soft); font-size: 14px; }
+    .scene-copy { display: grid; gap: 2px; }
+    .scene-copy strong { font-size: 12px; }
+    .scene-copy small { color: var(--muted); font-size: 10px; }
+
+    .goods { margin: 0 15px; border: 1px solid var(--line); border-radius: 14px; }
+    .goods-title { display: flex; justify-content: space-between; padding: 11px 12px; border-bottom: 1px solid var(--line); color: #596174; font-size: 11px; font-weight: 750; }
+    .goods-title small { color: #9aa1af; font-size: 10px; font-weight: 500; }
+    .goods-row { display: grid; grid-template-columns: 29px 1fr auto; align-items: center; gap: 9px; margin: 0 11px; padding: 10px 0; border-bottom: 1px dashed #ececf1; }
+    .goods-row:last-of-type { border-bottom: 0; }
+    .goods-index { display: grid; width: 27px; height: 27px; place-items: center; border-radius: 8px; color: #8a91a0; background: #f2f3f5; font-size: 10px; font-weight: 750; }
+    .goods-index.room { color: var(--brand-dark); background: var(--brand-soft); }
+    .goods-copy { display: grid; gap: 3px; min-width: 0; }
+    .goods-copy strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .goods-copy small { color: #989eaa; font-size: 10px; }
+    .goods-row > b { font-size: 12px; }
+    .total { display: flex; align-items: baseline; justify-content: space-between; padding: 12px; border-radius: 0 0 13px 13px; background: #fafafa; font-size: 11px; }
+    .total strong { color: var(--brand-dark); font-size: 20px; letter-spacing: -.6px; }
+    .total strong small { margin-right: 2px; font-size: 11px; }
+    .actions { display: flex; justify-content: flex-end; padding: 13px 15px 15px; }
+    .action { min-width: 92px; padding: 9px 14px; border-radius: 10px; color: white; background: var(--night); font-size: 11px; font-weight: 700; }
+    .action.pay { background: linear-gradient(135deg, #fb895b, #ed6533); }
+
+    .reservation-card { display: grid; grid-template-columns: 112px minmax(0, 1fr); min-height: 148px; }
+    .reservation-image { position: relative; overflow: hidden; min-height: 148px; background: #d8dbe2; }
+    .reservation-image img { width: 100%; height: 100%; object-fit: cover; }
+    .reservation-image::after { position: absolute; inset: 0; background: linear-gradient(90deg, transparent 55%, rgba(7,13,26,.13)); content: ""; }
+    .reservation-image .type { position: absolute; z-index: 2; left: 9px; bottom: 9px; padding: 5px 7px; border-radius: 7px; color: white; background: rgba(12, 20, 34, .76); backdrop-filter: blur(8px); font-size: 9px; font-weight: 750; }
+    .reservation-body { display: flex; min-width: 0; flex-direction: column; padding: 13px 13px 11px; }
+    .reservation-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+    .reservation-store { min-width: 0; }
+    .reservation-store h3 { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+    .reservation-store p { margin-top: 3px; color: var(--muted); font-size: 9px; }
+    .reservation-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 7px; margin-top: 12px; }
+    .info-item { display: grid; gap: 2px; min-width: 0; }
+    .info-item label { color: #9aa1af; font-size: 8px; }
+    .info-item strong { overflow: hidden; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+    .reservation-actions { display: flex; gap: 6px; margin-top: auto; padding-top: 11px; }
+    .reservation-actions button { flex: 1; padding: 7px 6px; border-radius: 8px; color: #626b7c; background: #f0f1f4; font-size: 9px; font-weight: 700; }
+    .reservation-actions .main { color: white; background: var(--night); }
+    .reservation-actions .arrive { color: #fff; background: var(--green); }
+
+    .load-more { display: grid; min-height: 78px; place-items: center; color: #a0a5b0; font-size: 10px; }
+    .load-more span { display: flex; align-items: center; gap: 7px; }
+    .load-more i { display: inline-block; animation: up 1.25s ease-in-out infinite; font-size: 16px; font-style: normal; }
+    @keyframes up { 0%, 100% { transform: translateY(2px); opacity: .45; } 50% { transform: translateY(-3px); opacity: 1; } }
+
+    .tabbar { position: fixed; z-index: 30; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: 1fr 1fr; height: calc(66px + env(safe-area-inset-bottom)); padding: 6px 24px env(safe-area-inset-bottom); border-top: 1px solid rgba(24,32,52,.08); background: rgba(255,255,255,.94); box-shadow: 0 -7px 24px rgba(21,29,49,.07); backdrop-filter: blur(18px); }
+    .tab { display: grid; place-items: center; align-content: center; gap: 3px; color: #9ca2ae; background: transparent; font-size: 10px; font-weight: 650; }
+    .tab svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+    .tab.active { color: var(--brand-dark); }
+    .tab.active::after { position: absolute; top: 0; width: 24px; height: 3px; border-radius: 0 0 4px 4px; background: var(--brand); content: ""; }
+
+    .toast { position: fixed; z-index: 50; bottom: 88px; left: 50%; padding: 10px 15px; border-radius: 999px; color: white; background: rgba(16,24,43,.9); box-shadow: 0 8px 24px rgba(16,24,43,.22); font-size: 11px; opacity: 0; pointer-events: none; transform: translate(-50%, 12px); transition: .25s ease; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (min-width: 540px) {
+      body { width: 430px; min-height: 860px; margin: 28px auto; overflow: hidden; border-radius: 28px; box-shadow: 0 25px 70px rgba(20,28,45,.22); }
+      .app { position: relative; height: 860px; min-height: 0; overflow-y: auto; scrollbar-width: none; }
+      .app::-webkit-scrollbar { display: none; }
+      .tabbar { position: fixed; right: auto; left: 50%; width: 430px; transform: translateX(-50%); }
+      .toast { bottom: 110px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="appScroll">
+    <header class="topbar">
+      <span class="brand-mark">A³⁸⁰</span>
+      <div class="brand-copy"><strong>A380 商户工作台</strong><small>经营数据与订单履约</small></div>
+      <span class="store-pill">上海旗舰店⌄</span>
+    </header>
+
+    <main>
+      <section class="page" data-page="reservations">
+        <div class="page-head">
+          <div><span class="eyebrow">RESERVATIONS</span><h1>预约管理</h1><p>提前安排资源，减少客户等待</p></div>
+        </div>
+        <div class="filters">
+          <button class="chip active">全部<span>12</span></button><button class="chip">待确认<span>3</span></button><button class="chip">待到店<span>5</span></button><button class="chip">已到店<span>2</span></button>
+        </div>
+        <div class="list" id="reservationList">
+          <article class="card reservation-card">
+            <div class="reservation-image"><img src="../c-end/assets/images/ktv-1.png" alt="KTV 环境"><span class="type">KTV 预约</span></div>
+            <div class="reservation-body">
+              <div class="reservation-top"><div class="reservation-store"><h3>A380 KTV 上海旗舰店</h3><p>预约号 A3800916001</p></div><span class="status waiting">待确认</span></div>
+              <div class="reservation-info"><div class="info-item"><label>预约时间</label><strong>今天 19:30</strong></div><div class="info-item"><label>预约资源</label><strong>星空小包</strong></div><div class="info-item"><label>到店人数</label><strong>6 人</strong></div><div class="info-item"><label>联系人</label><strong>陈女士 6688</strong></div></div>
+              <div class="reservation-actions"><button data-demo>取消</button><button class="main" data-demo>确认预约</button></div>
+            </div>
+          </article>
+          <article class="card reservation-card">
+            <div class="reservation-image"><img src="../c-end/assets/images/ktv-3.png" alt="KTV 环境"><span class="type">KTV 预约</span></div>
+            <div class="reservation-body">
+              <div class="reservation-top"><div class="reservation-store"><h3>A380 KTV 上海旗舰店</h3><p>预约号 A3800916002</p></div><span class="status serving">已确认</span></div>
+              <div class="reservation-info"><div class="info-item"><label>预约时间</label><strong>今天 20:00</strong></div><div class="info-item"><label>预约资源</label><strong>鎏金中包</strong></div><div class="info-item"><label>到店人数</label><strong>10 人</strong></div><div class="info-item"><label>联系人</label><strong>林先生 3800</strong></div></div>
+              <div class="reservation-actions"><button data-demo>取消</button><button class="arrive" data-demo>确认到店</button></div>
+            </div>
+          </article>
+          <article class="card reservation-card">
+            <div class="reservation-image"><img src="../c-end/assets/images/ktv-4.png" alt="KTV 环境"><span class="type">KTV 预约</span></div>
+            <div class="reservation-body">
+              <div class="reservation-top"><div class="reservation-store"><h3>A380 KTV 上海旗舰店</h3><p>预约号 A3800916003</p></div><span class="status done">已到店</span></div>
+              <div class="reservation-info"><div class="info-item"><label>预约时间</label><strong>今天 18:30</strong></div><div class="info-item"><label>预约资源</label><strong>派对大包</strong></div><div class="info-item"><label>到店人数</label><strong>12 人</strong></div><div class="info-item"><label>联系人</label><strong>周女士 1024</strong></div></div>
+              <div class="reservation-actions"><button class="main" data-demo>立即开台</button></div>
+            </div>
+          </article>
+        </div>
+        <div class="load-more" data-loader="reservations"><span><i>↑</i>继续上拉加载更多预约</span></div>
+      </section>
+
+      <section class="page active" data-page="orders">
+        <div class="page-head">
+          <div><span class="eyebrow">ORDER FULFILLMENT</span><h1>订单管理</h1><p>商品、数量与金额一目了然</p></div>
+          <button class="create-button" data-demo><b>＋</b>开台 / 下单</button>
+        </div>
+        <div class="filters">
+          <button class="chip active">全部<span>18</span></button><button class="chip">进行中<span>4</span></button><button class="chip">待处理<span>3</span></button><button class="chip">已完成<span>11</span></button>
+        </div>
+        <div class="list" id="orderList">
+          <article class="card">
+            <div class="order-head"><div class="order-no"><small>订单号</small><strong>ORD20260916001</strong></div><span class="status serving">服务中</span></div>
+            <div class="scene"><span class="scene-icon">♫</span><div class="scene-copy"><strong>星空小包 · KTV 消费</strong><small>今天 19:42 开台 · 已服务 1小时18分</small></div></div>
+            <div class="goods">
+              <div class="goods-title"><span>消费明细</span><small>共 6 件</small></div>
+              <div class="goods-row"><span class="goods-index room">时</span><div class="goods-copy"><strong>包厢计时费</strong><small>¥368.00 × 1</small></div><b>¥368.00</b></div>
+              <div class="goods-row"><span class="goods-index">1</span><div class="goods-copy"><strong>缤纷果盘</strong><small>¥128.00 × 1</small></div><b>¥128.00</b></div>
+              <div class="goods-row"><span class="goods-index">2</span><div class="goods-copy"><strong>气泡水</strong><small>¥18.00 × 4</small></div><b>¥72.00</b></div>
+              <div class="total"><span>订单合计</span><strong><small>¥</small>568.00</strong></div>
+            </div>
+            <div class="actions"><button class="action" data-demo>继续点单</button></div>
+          </article>
+          <article class="card">
+            <div class="order-head"><div class="order-no"><small>订单号</small><strong>ORD20260916002</strong></div><span class="status waiting">待结算</span></div>
+            <div class="scene"><span class="scene-icon">♫</span><div class="scene-copy"><strong>派对大包 · KTV 消费</strong><small>今天 18:16 开台 · 已结台</small></div></div>
+            <div class="goods">
+              <div class="goods-title"><span>消费明细</span><small>共 8 件</small></div>
+              <div class="goods-row"><span class="goods-index room">时</span><div class="goods-copy"><strong>包厢计时费</strong><small>¥568.00 × 1</small></div><b>¥568.00</b></div>
+              <div class="goods-row"><span class="goods-index">1</span><div class="goods-copy"><strong>派对畅饮套餐</strong><small>¥210.00 × 1</small></div><b>¥210.00</b></div>
+              <div class="goods-row"><span class="goods-index">2</span><div class="goods-copy"><strong>精酿啤酒</strong><small>¥18.00 × 6</small></div><b>¥108.00</b></div>
+              <div class="total"><span>订单合计</span><strong><small>¥</small>886.00</strong></div>
+            </div>
+            <div class="actions"><button class="action pay" data-demo>确认结算</button></div>
+          </article>
+          <article class="card">
+            <div class="order-head"><div class="order-no"><small>订单号</small><strong>ORD20260915012</strong></div><span class="status done">已完成</span></div>
+            <div class="scene"><span class="scene-icon">♫</span><div class="scene-copy"><strong>鎏金中包 · KTV 消费</strong><small>昨天 21:08 · 微信支付</small></div></div>
+            <div class="goods">
+              <div class="goods-title"><span>消费明细</span><small>共 4 件</small></div>
+              <div class="goods-row"><span class="goods-index room">时</span><div class="goods-copy"><strong>包厢计时费</strong><small>¥328.00 × 1</small></div><b>¥328.00</b></div>
+              <div class="goods-row"><span class="goods-index">1</span><div class="goods-copy"><strong>果盘 + 小食套餐</strong><small>¥188.00 × 1</small></div><b>¥188.00</b></div>
+              <div class="goods-row"><span class="goods-index">2</span><div class="goods-copy"><strong>苏打水</strong><small>¥16.00 × 2</small></div><b>¥32.00</b></div>
+              <div class="total"><span>订单合计</span><strong><small>¥</small>548.00</strong></div>
+            </div>
+          </article>
+        </div>
+        <div class="load-more" data-loader="orders"><span><i>↑</i>继续上拉加载更多订单</span></div>
+      </section>
+    </main>
+  </div>
+
+  <nav class="tabbar">
+    <button class="tab" data-target="reservations">
+      <svg viewBox="0 0 24 24"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg><span>预约</span>
+    </button>
+    <button class="tab active" data-target="orders">
+      <svg viewBox="0 0 24 24"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg><span>订单</span>
+    </button>
+  </nav>
+  <div class="toast" id="toast">设计稿仅演示交互</div>
+
+  <script>
+    const appScroll = document.querySelector('#appScroll');
+    const toast = document.querySelector('#toast');
+    const loaded = { orders: false, reservations: false };
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const target = tab.dataset.target;
+        document.querySelectorAll('.tab').forEach((item) => item.classList.toggle('active', item === tab));
+        document.querySelectorAll('.page').forEach((page) => page.classList.toggle('active', page.dataset.page === target));
+        appScroll.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    });
+
+    document.querySelectorAll('.filters').forEach((group) => {
+      group.addEventListener('click', (event) => {
+        const chip = event.target.closest('.chip');
+        if (!chip) return;
+        group.querySelectorAll('.chip').forEach((item) => item.classList.toggle('active', item === chip));
+      });
+    });
+
+    document.addEventListener('click', (event) => {
+      if (!event.target.closest('[data-demo]')) return;
+      toast.classList.add('show');
+      clearTimeout(window.toastTimer);
+      window.toastTimer = setTimeout(() => toast.classList.remove('show'), 1500);
+    });
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        const type = entry.target.dataset.loader;
+        if (loaded[type] || !document.querySelector(`[data-page="${type}"]`).classList.contains('active')) return;
+        loaded[type] = true;
+        entry.target.innerHTML = '<span>正在加载…</span>';
+        setTimeout(() => {
+          if (type === 'orders') appendOrder(); else appendReservation();
+          entry.target.innerHTML = '<span>— 已加载更多内容（交互演示）—</span>';
+        }, 650);
+      });
+    }, { root: window.innerWidth >= 540 ? appScroll : null, rootMargin: '120px 0px' });
+    document.querySelectorAll('[data-loader]').forEach((loader) => observer.observe(loader));
+
+    function appendOrder() {
+      document.querySelector('#orderList').insertAdjacentHTML('beforeend', `
+        <article class="card">
+          <div class="order-head"><div class="order-no"><small>订单号</small><strong>ORD20260915008</strong></div><span class="status done">已完成</span></div>
+          <div class="scene"><span class="scene-icon">♫</span><div class="scene-copy"><strong>星空小包 · KTV 消费</strong><small>昨天 19:30 · 现金支付</small></div></div>
+          <div class="goods"><div class="goods-title"><span>消费明细</span><small>共 3 件</small></div><div class="goods-row"><span class="goods-index room">时</span><div class="goods-copy"><strong>包厢计时费</strong><small>¥268.00 × 1</small></div><b>¥268.00</b></div><div class="goods-row"><span class="goods-index">1</span><div class="goods-copy"><strong>鲜榨橙汁</strong><small>¥28.00 × 2</small></div><b>¥56.00</b></div><div class="total"><span>订单合计</span><strong><small>¥</small>324.00</strong></div></div>
+        </article>`);
+    }
+    function appendReservation() {
+      document.querySelector('#reservationList').insertAdjacentHTML('beforeend', `
+        <article class="card reservation-card"><div class="reservation-image"><img src="../c-end/assets/images/ktv-2.png" alt="KTV 环境"><span class="type">KTV 预约</span></div><div class="reservation-body"><div class="reservation-top"><div class="reservation-store"><h3>A380 KTV 上海旗舰店</h3><p>预约号 A3800916004</p></div><span class="status waiting">待确认</span></div><div class="reservation-info"><div class="info-item"><label>预约时间</label><strong>明天 18:00</strong></div><div class="info-item"><label>预约资源</label><strong>主题中包</strong></div><div class="info-item"><label>到店人数</label><strong>8 人</strong></div><div class="info-item"><label>联系人</label><strong>吴先生 9068</strong></div></div><div class="reservation-actions"><button data-demo>取消</button><button class="main" data-demo>确认预约</button></div></div></article>`);
+    }
+  </script>
+</body>
+</html>
