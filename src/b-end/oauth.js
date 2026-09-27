@@ -112,8 +112,9 @@ async function getSession() {
   }
 }
 
-// 调试放权端口：5175/5176 为本地 Vite 开发服务，30082 为 Kind 部署的 H5（内网调试用）。
-const LOCAL_DEV_PORTS = ['5175', '5176', '30082']
+// 调试放权端口：5175/5176 为本地 Vite 开发服务；Kind 统一 Ingress 使用
+// 30080（旧版独立 H5 代理曾使用 30082）。
+const LOCAL_DEV_PORTS = ['5175', '5176', '30080', '30082']
 
 function isPrivateHostname(host) {
   return host === 'localhost' || host === '127.0.0.1'
