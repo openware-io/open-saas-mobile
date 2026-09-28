@@ -1,4 +1,4 @@
-# gv_saas_mobile
+# open-saas-mobile
 
 SaaS 接入 App 的前端工程（**Vue3 + Vite 双入口**），承载两个对接移动端的 H5：
 
