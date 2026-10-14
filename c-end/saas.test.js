@@ -32,7 +32,7 @@ test('retries a KTV room request once after refreshing an expired context', asyn
 
 /** C 端点单目录要带主图：服务端返回的网关同源相对路径必须原样透传给点单页（前端不拼域名）。 */
 test('listCatalog passes catalog images through to the C-end ordering page', async () => {
-  const thumb = '/api/v1/media-public/gv-media-public/saas/1001/202609/a.png'
+  const thumb = '/api/v1/media-public/open-media-public/saas/1001/202609/a.png'
   const fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,
@@ -57,7 +57,7 @@ test('listCatalog passes catalog images through to the C-end ordering page', asy
 
 /** C 端选包厢/预约列表要带包厢主图与描述：网关同源相对路径原样透传，无图包厢退化为空数组 + null。 */
 test('listKtvRooms passes room images and description through to the C-end booking page', async () => {
-  const thumb = '/api/v1/media-public/gv-media-public/saas/1001/202609/room.png'
+  const thumb = '/api/v1/media-public/open-media-public/saas/1001/202609/room.png'
   const fetch = vi.fn().mockResolvedValue({
     ok: true,
     status: 200,

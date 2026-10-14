@@ -311,8 +311,8 @@ test('C/B 端「房型 + 到店分配」口径一致，C 端入口加载房型�
 // —— 8. 选择包厢类型：房型卡片必须带配图（样板包厢照片，无图退门店占位图） ——
 
 test('房型展示图取该房型首个「带图」包厢的主图；多房型不串图；无图退占位图（不出现空 src）', async () => {
-  const smallThumb = '/api/v1/media-public/gv-media-public/saas/1001/202609/small.png'
-  const bigThumb = '/api/v1/media-public/gv-media-public/saas/1001/202609/big.png'
+  const smallThumb = '/api/v1/media-public/open-media-public/saas/1001/202609/small.png'
+  const bigThumb = '/api/v1/media-public/open-media-public/saas/1001/202609/big.png'
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
     if (target.includes('/admin/resources/types')) {
@@ -391,9 +391,9 @@ test('源码守卫：包厢类型卡片必须渲染图片（alt=房型名、懒�
 // —— 9. 房型自带多图（后台「房型管理」上传，V8__res_room_type_media.sql）——
 
 test('房型自带图优先：多图全集主图在前、去重去空，且不被包厢样板图覆盖', async () => {
-  const typeMain = '/api/v1/media-public/gv-media-public/saas/1001/202609/type-main.png'
-  const typeSecond = '/api/v1/media-public/gv-media-public/saas/1001/202609/type-2.png'
-  const roomThumb = '/api/v1/media-public/gv-media-public/saas/1001/202609/room.png'
+  const typeMain = '/api/v1/media-public/open-media-public/saas/1001/202609/type-main.png'
+  const typeSecond = '/api/v1/media-public/open-media-public/saas/1001/202609/type-2.png'
+  const roomThumb = '/api/v1/media-public/open-media-public/saas/1001/202609/room.png'
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
     if (target.includes('/admin/resources/types')) {
