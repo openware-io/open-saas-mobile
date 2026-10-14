@@ -13,7 +13,7 @@ import { formatMoney, setCurrency } from './src/shared/utils/money'
  *    裸币种码字面量（测试文件除外）；
  * 3) 写请求体的币种必须取全局当前币种；
  * 4) 后端 `displayText`（按当时币种拼好的成串文案）不得直出页面，否则同页会出现两种符号；
- * 5) 展示格式三端（`gv_saas_admin` / `gv_chat_app` / 本仓库）逐字一致：**符号紧跟数字、无空格**。
+ * 5) 展示格式三端（`open-saas-admin` / `open-chat-app` / 本仓库）逐字一致：**符号紧跟数字、无空格**。
  */
 
 const repoRoot = fileURLToPath(new URL('.', import.meta.url))
@@ -98,7 +98,7 @@ test('c-end/** 与 src/** 不得出现硬编码符号、展示用「元」、手
 
 /**
  * 三端展示格式逐字一致（16_CURRENCY_CONVENTIONS §4）：
- * `gv_saas_admin` `src/utils/format.js` 与 `gv_chat_app` `lib/core/currency.dart` 都是
+ * `open-saas-admin` `src/utils/format.js` 与 `open-chat-app` `lib/core/currency.dart` 都是
  * **符号紧跟数字、无空格**（`¥100.00` / `$100.00`），本仓库两侧必须是同一格式。
  */
 test('金额展示格式三端一致：符号紧跟数字（无空格），千分位保留、负数符号在最前', async () => {

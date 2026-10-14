@@ -271,7 +271,7 @@ export function paymentTotals(legs) {
 }
 
 // —— 组合支付分腿的输入口径（代币 / 积分不是货币）——
-// 与后台 gv_saas_admin `src/constants/payment-methods.js` 同一口径：
+// 与后台 open-saas-admin `src/constants/payment-methods.js` 同一口径：
 //  - 现金 / 线上分腿是**金额**（主单位输入，提交最小货币单位）；
 //  - 储值币分腿是**数量**（按租户比例折回金额），积分分腿是**数量**（就是个 1:1 的个数）；
 //  - 提交给服务端的 `payments[].amount` 恒为最小货币单位整数（POINT 腿服务端按同一个数核销积分），

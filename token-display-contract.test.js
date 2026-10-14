@@ -403,7 +403,7 @@ test('源码守卫：C 端接口层透传 tokenAmount / tokenBrandName 并只用
   expect(saas).toContain('money().formatPoints(')
 })
 
-// —— 7. 组合支付分腿「数量输入」口径（与后台 gv_saas_admin payment-methods 对齐） ——
+// —— 7. 组合支付分腿「数量输入」口径（与后台 open-saas-admin payment-methods 对齐） ——
 // 现金 / 线上腿填**金额**（主单位），储值币 / 积分腿填**数量**（个数）；
 // 提交给服务端的 `payments[].amount` 恒为最小货币单位整数（收款 wire contract 不变）。
 

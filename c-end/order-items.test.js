@@ -10,7 +10,7 @@ import { expect, test, vi } from 'vitest'
  *   1) 接口失败：C 端消费者会话（appId=saas-a380-c）的权限快照来自
  *      iam_consumer_application.permissions_json，只有 reservation.view / reservation.create；
  *      而 `GET /api/v1/business/orders/{id}/items` 要求商户权限码 order.view
- *      （gv_im_server OrderItemController#listItems），于是回 403 PERMISSION_DENIED。
+ *      （open-im-server OrderItemController#listItems），于是回 403 PERMISSION_DENIED。
  *   2) 前端无兜底：renderOrderItems 把两个 await 裸放在 async 函数里，既没有 try/catch
  *      也没有请求超时，异常直接冒泡出事件处理器，页面就停在加载态。
  *

@@ -7,7 +7,7 @@ SaaS 接入 App 的前端工程（**Vue3 + Vite 双入口**），承载两个对
 | **C 端**「A380 更多服务」 | `index.c.html` | `/a380/` | 顾客任选包厢预约、查账单/钱包 |
 | **B 端**「A380 商户端」 | `index.b.html` | `/b/` | 门店现场操作（预约管理/开台/结算/收银/门店） |
 
-> 与 Web B 端后台（`gv_saas_admin`，/saas/）区分：本仓库只放「对接移动端」的 H5；Web 桌面后台是 SaaS 本身提供的完整管理台，留在 `gv_saas_admin`。
+> 与 Web B 端后台（`open-saas-admin`，/saas/）区分：本仓库只放「对接移动端」的 H5；Web 桌面后台是 SaaS 本身提供的完整管理台，留在 `open-saas-admin`。
 
 ## 目录
 
@@ -100,7 +100,7 @@ npm run dev:c # C 端预约 H5，端口 5175
 首次使用 OAuth 登录时，回调地址必须与浏览器实际打开的地址完全一致。Kind 的回调同步脚本默认登记 `localhost` 和 `127.0.0.1` 的 Vite 开发端口；因此 `.112` 本地运行 Vite 时无需额外登记 IP。若必须从另一台机器打开开发服务，应配置 HTTPS 后再通过 `-AdditionalViteCOrigins` 和 `-AdditionalViteBOrigins` 登记该 HTTPS 源站。
 
 ```powershell
-& 'D:\projects\cnb\gv_im_server\scripts\deploy\sync-oidc-client-registry.ps1' `
+& 'D:\projects\cnb\open-im-server\scripts\deploy\sync-oidc-client-registry.ps1' `
   -Environment kind -Context kind-gv-im-local -Namespace gv-im-local `
   -DatabaseSecret gv-im-env -RootDatabaseSecretKey DB_PASSWORD `
   -H5Base 'http://192.168.31.91:30082' `

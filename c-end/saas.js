@@ -255,7 +255,7 @@
     return money().paymentTotals(legs);
   }
 
-  // —— 组合支付分腿输入口径（与后台 gv_saas_admin 的 payment-methods 同一份口径）——
+  // —— 组合支付分腿输入口径（与后台 open-saas-admin 的 payment-methods 同一份口径）——
   // 现金 / 线上腿是金额，储值币 / 积分腿是**数量**；提交给服务端的 amount 恒为最小货币单位整数。
   /** 代币数量 -> 最小货币单位整数（数量腿折回金额的唯一入口）。 */
   function tokensToMinor(tokens, ratio) {

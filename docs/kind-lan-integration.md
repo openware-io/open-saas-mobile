@@ -12,7 +12,7 @@
 http://192.168.31.91:30082/a380/
 ```
 
-商户端使用 `http://192.168.31.91:30082/b/`。**普通 HTTP 局域网 IP 不是 PKCE 所需的浏览器安全上下文**，正常 OAuth 链路在这里跑不通；本地 Kind 因此提供「调试放权」：内网地址 + 调试端口（5175/5176/30082）下，页面改为调用 `POST /api/v1/dev/saas/session` 换取调试会话，跳过 PKCE（实现见 gv_im_server 的 `DevSaasSessionController`）。
+商户端使用 `http://192.168.31.91:30082/b/`。**普通 HTTP 局域网 IP 不是 PKCE 所需的浏览器安全上下文**，正常 OAuth 链路在这里跑不通；本地 Kind 因此提供「调试放权」：内网地址 + 调试端口（5175/5176/30082）下，页面改为调用 `POST /api/v1/dev/saas/session` 换取调试会话，跳过 PKCE（实现见 open-im-server 的 `DevSaasSessionController`）。
 
 调试放权由部署机显式开启，默认关闭：
 
@@ -25,7 +25,7 @@ http://192.168.31.91:30082/a380/
 Windows 防火墙只需允许受信任局域网 `192.168.31.0/24` 访问 TCP `30082`。以管理员 PowerShell 执行：
 
 ```powershell
-& 'D:\projects\cnb\gv_im_server\scripts\deploy\enable-kind-lan-access.ps1' -RemoteSubnet '192.168.31.0/24'
+& 'D:\projects\cnb\open-im-server\scripts\deploy\enable-kind-lan-access.ps1' -RemoteSubnet '192.168.31.0/24'
 ```
 
 ## 访问本地 Vite 开发服务
