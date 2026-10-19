@@ -85,7 +85,7 @@ async function loadCend(fetchImpl, options = {}) {
     console: { log() {}, warn() {}, error: (...args) => errors.push(args) },
     scrollTo() {},
     A380OAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
-    A380_DATA: { services: [], venues: { ktv: { address: 'A380 KTV', tags: [] } } },
+    A380_DATA: { services: [], venues: { ktv: { address: 'OpenChat KTV', tags: [] } } },
     __A380_TEST__: {},
     document: {
       querySelector(selector) {

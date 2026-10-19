@@ -4,7 +4,7 @@
   var messages = {
     NO_CONSUMER_ACCESS: {
       title: '服务尚未开通',
-      description: '当前账号尚未开通 A380 服务，请联系管理员开通后重试。',
+      description: '当前账号尚未开通 OpenChat 服务，请联系管理员开通后重试。',
       retryable: false,
     },
     CONTEXT_SELECTION_REQUIRED: {
@@ -19,22 +19,22 @@
     },
     SAAS_SESSION_REQUIRED: {
       title: '登录状态已过期',
-      description: '当前登录状态已失效，请重新从 IM 进入 A380。',
+      description: '当前登录状态已失效，请重新从 IM 进入 OpenChat。',
       retryable: true,
     },
     IM_SESSION_EXPIRED: {
       title: 'IM 登录已失效',
-      description: '请返回 IM 重新登录后，再进入 A380。',
+      description: '请返回 IM 重新登录后，再进入 OpenChat。',
       retryable: false,
     },
     IM_BRIDGE_AUTH_FAILED: {
       title: '无法完成 IM 授权',
-      description: '请返回 IM 后重新进入 A380；如持续失败请更新 IM App。',
+      description: '请返回 IM 后重新进入 OpenChat；如持续失败请更新 IM App。',
       retryable: false,
     },
     PKCE_UNAVAILABLE: {
       title: '当前环境不支持授权',
-      description: '请从已更新的 IM App 重新进入 A380，或使用 HTTPS 地址访问。',
+      description: '请从已更新的 IM App 重新进入 OpenChat，或使用 HTTPS 地址访问。',
       retryable: false,
     },
   };

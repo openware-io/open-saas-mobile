@@ -1,5 +1,5 @@
 /**
- * C 端（A380 更多服务）OAuth 客户端：标准接入流程（PKCE + 授权码 + 服务端会话 + 上下文选择）。
+ * C 端（OpenChat 更多服务）OAuth 客户端：标准接入流程（PKCE + 授权码 + 服务端会话 + 上下文选择）。
  * 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> POST /identity/oauth/im/callback（服务端换 token+绑定）
  *        -> GET /auth/contexts -> POST /auth/context/select -> 激活同源 Cookie 会话。
  * 不改 open-chat-app：入口由 IM 后台「服务板块」登记服务项(link 指向 /a380/)，跳转+授权走 IM 开放平台。

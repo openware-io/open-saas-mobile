@@ -111,7 +111,7 @@ function bindRoomTypeGallery(root) {
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[char]);
 }
-function orderNo() { return `A380${Date.now().toString().slice(-10)}`; }
+function orderNo() { return `OpenChat${Date.now().toString().slice(-10)}`; }
 function go(route) { location.hash = `#/${route}`; }
 /**
  * 当前路由：`#/my-orders` → `my-orders`（空 hash 视作 home）。
@@ -193,7 +193,7 @@ function addOrder(order) {
   saveLocal('a380-orders', state.orders);
 }
 
-// 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「A380币」、比例 100），
+// 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「OpenChat币」、比例 100），
 // 各页面统一使用，不硬编码。储值币与积分是**数量**，不是货币：展示只走 SAAS.formatTokens / formatPoints。
 var walletBrand = SAAS.DEFAULT_WALLET_BRAND;
 var walletRatio = 100;
@@ -241,7 +241,7 @@ function payLegAvailableInput(method) {
 function renderHome() {
   app.innerHTML = `
     <section class="wallet">
-      <h1 class="brand">A380</h1>
+      <h1 class="brand">OpenChat</h1>
       <div class="balances">
         <button class="balance" data-route="ledger/coin"><span class="balance-label">${walletBrand}：</span><strong id="wallet-coin">—</strong></button>
         <button class="balance" data-route="ledger/points"><span class="balance-label">积分：</span><strong id="wallet-points">—</strong></button>
@@ -253,10 +253,10 @@ function renderHome() {
     <div class="section-head"><h2>热门服务</h2><button data-toast="更多服务持续更新中">查看全部 ›</button></div>
     <section class="mini-grid">
       ${[
-        ['hotel', 'A380酒店', 'hotel-1.jpg', '豪华房低至 ' + mockMoney(368)],
-        ['bar', 'A380酒吧', 'bar-1.jpg', '散台 / 卡座在线预约'],
-        ['billiards', 'A380台球厅', 'billiards-1.png', '专业球台 · 到店即玩'],
-        ['foot', 'A380足浴', 'foot-1.png', '放松身心 · 预约免排队'],
+        ['hotel', 'OpenChat酒店', 'hotel-1.jpg', '豪华房低至 ' + mockMoney(368)],
+        ['bar', 'OpenChat酒吧', 'bar-1.jpg', '散台 / 卡座在线预约'],
+        ['billiards', 'OpenChat台球厅', 'billiards-1.png', '专业球台 · 到店即玩'],
+        ['foot', 'OpenChat足浴', 'foot-1.png', '放松身心 · 预约免排队'],
       ].map(([id, title, pic, note]) => `<button class="mini-card" data-route="service/${id}"><img src="${image(pic)}" alt="${title}"><span class="mini-card-copy"><strong>${title}</strong><small>${note}</small></span></button>`).join('')}
     </section>
     <section class="home-notice"><span>ⓘ</span><p>页面内数据、价格和订单均为前端演示，不会产生真实费用。</p></section>`;
@@ -380,7 +380,7 @@ function ledgerRow(r, isCoin) {
 function renderKtvBusiness() {
   const counts = state.ktvRooms.reduce((result, room) => ({ ...result, [room[1]]: (result[room[1]] || 0) + 1 }), {});
   app.innerHTML = `${pageHead('KTV 业务')}
-    <section class="business-hero"><img src="${image('ktv-1.png')}" alt="A380 KTV"><div><small>今日营业额</small><strong>${mockMoney(8680)}</strong><p>较昨日 +12.6%</p></div></section>
+    <section class="business-hero"><img src="${image('ktv-1.png')}" alt="OpenChat KTV"><div><small>今日营业额</small><strong>${mockMoney(8680)}</strong><p>较昨日 +12.6%</p></div></section>
     <section class="metric-grid"><button data-toast="显示今日全部订单"><strong>18</strong><span>今日订单</span></button><button data-toast="显示使用中包厢"><strong>${counts['占用'] || 0}</strong><span>使用中</span></button><button data-toast="显示预约客户"><strong>${counts['预定'] || 0}</strong><span>待到店</span></button><button data-toast="显示待处理包厢"><strong>${(counts['清理中'] || 0)+(counts['维护'] || 0)}</strong><span>待处理</span></button></section>
     <div class="section-head"><h2>快捷操作</h2><span></span></div>
     <section class="quick-grid"><button data-toast="已打开预约登记（mock）"><span>📅</span>预约登记</button><button data-toast="已打开组合收银（mock）"><span>💳</span>前台收银</button><button data-toast="交接班数据已生成（mock）"><span>🔁</span>交接班</button><button data-toast="今日业绩 ${mockMoney(8680)}，套餐销售12份"><span>📊</span>经营报表</button></section>
@@ -409,7 +409,7 @@ const ktvRoomTypeCache = {};
 /** 选包厢类型页：只列房型（包厢可能几十上百个，房型不多），不出现任何具体包厢号。 */
 async function renderKtvBooking() {
   app.innerHTML = `${pageHead('KTV 预约 · 选择包厢类型', '<span></span>')}
-    <section class="detail-card merchant"><h2>A380 KTV</h2><p class="address">📍 ${data.venues.ktv.address}</p><div class="tag-row">${data.venues.ktv.tags.map(tag => `<span>${tag}</span>`).join('')}</div></section>
+    <section class="detail-card merchant"><h2>OpenChat KTV</h2><p class="address">📍 ${data.venues.ktv.address}</p><div class="tag-row">${data.venues.ktv.tags.map(tag => `<span>${tag}</span>`).join('')}</div></section>
     <div class="section-head"><h2>选择包厢类型</h2><span></span></div>
     <p class="form-hint">本店包厢数量较多，线上只需选择包厢类型；具体包厢到店后由门店分配。</p>
     <section class="package-list"><p class="form-hint">包厢类型加载中…</p></section>`;
@@ -708,14 +708,14 @@ async function renderKtvBookForm(roomTypeId) {
 function renderVenueReservationSuccess(saved, fields, venue) {
   app.innerHTML = `${pageHead('提交成功', '<span></span>')}
     <section class="success"><div>✓</div><h1>预约已提交</h1><p>门店将电话与您确认到店。</p></section>
-    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('A380' + saved.id))}</strong></div><div><span>预约项目</span><strong>${escapeHtml(venue.title)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name || '')}</strong></div><div><span>到店时间</span><strong>${escapeHtml(fields.date + ' ' + fields.time)}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>`;
+    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('OpenChat' + saved.id))}</strong></div><div><span>预约项目</span><strong>${escapeHtml(venue.title)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name || '')}</strong></div><div><span>到店时间</span><strong>${escapeHtml(fields.date + ' ' + fields.time)}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>`;
 }
 
 function renderKtvReservationSuccess(saved, fields, roomType) {
   const roomTypeName = roomType && roomType.name ? roomType.name : '包厢类型';
   app.innerHTML = `${pageHead('提交成功', '<span></span>')}
     <section class="success"><div>✓</div><h1>预约已提交</h1><p>门店将电话与您确认到店；具体包厢到店后由门店分配。</p></section>
-    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('A380' + saved.id))}</strong></div><div><span>预约包厢类型</span><strong>${escapeHtml(roomTypeName)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name)}</strong></div><div><span>到店时间</span><strong>${fields.date} ${fields.time}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>
+    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('OpenChat' + saved.id))}</strong></div><div><span>预约包厢类型</span><strong>${escapeHtml(roomTypeName)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name)}</strong></div><div><span>到店时间</span><strong>${fields.date} ${fields.time}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>
     <div class="success-actions"><button class="primary-button" data-route="home">返回服务首页</button></div>`;
 }
 
@@ -1021,7 +1021,7 @@ function refreshMyBalances() {
 
 function renderMy() {
   var memberId = SAAS.config.memberId || '';
-  var nick = memberId ? ('会员 ' + memberId) : 'A380 会员';
+  var nick = memberId ? ('会员 ' + memberId) : 'OpenChat 会员';
   app.innerHTML =
     '<section class="me-hero">' +
       '<div class="me-avatar">' + escapeHtml((memberId || 'A').toString().slice(0, 1).toUpperCase()) + '</div>' +

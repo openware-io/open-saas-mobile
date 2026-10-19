@@ -36,9 +36,9 @@ test('KTV包厢列表在容纳人数下方显示接口返回的位置', async ()
   expect(listSource).toContain('escapeHtml(areaName)')
 })
 
-test('A380后台 presents A380 as tenant and KTV store as context, not a peer tab', async () => {
+test('OpenChat后台 presents OpenChat as tenant and KTV store as context, not a peer tab', async () => {
   const source = await readFile(new URL('../src/b-end/App.vue', import.meta.url), 'utf8')
-  expect(source).toContain('A380后台')
-  expect(source).toContain('A380租户')
+  expect(source).toContain('OpenChat后台')
+  expect(source).toContain('OpenChat租户')
   expect(source).not.toContain('to="/stores"')
 })

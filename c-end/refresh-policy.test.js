@@ -29,7 +29,7 @@ const billUrl = (id) => `/api/v1/business/orders/${id}/bill`
 
 /** 订单行：金额与状态都由服务端给（客户端不得再算）。 */
 const order = (over = {}) => Object.assign({
-  id: 9, orderNo: 'A380-9', businessType: 'KTV', status: 'SERVING',
+  id: 9, orderNo: 'OpenChat-9', businessType: 'KTV', status: 'SERVING',
   createdAt: '2024-05-01T10:00:00', totalAmount: 6150, liveTotalAmount: 6150, currencyCode: 'CNY',
 }, over)
 
@@ -106,7 +106,7 @@ async function loadCend(fetchImpl, options = {}) {
     console: { log() {}, warn() {}, error: (...args) => errors.push(args) },
     scrollTo() {},
     A380OAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
-    A380_DATA: { services: [], venues: { ktv: { address: 'A380 KTV', tags: [] } } },
+    A380_DATA: { services: [], venues: { ktv: { address: 'OpenChat KTV', tags: [] } } },
     __A380_TEST__: {},
     document: documentStub,
     addEventListener(type, handler) { (listeners[type] = listeners[type] || []).push(handler) },
