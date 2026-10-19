@@ -1,5 +1,7 @@
 # open-saas-mobile
 
+[中文](README.md) | [English](README.en.md)
+
 SaaS 接入 App 的前端工程（**Vue3 + Vite 双入口**），承载两个对接移动端的 H5：
 
 | 端 | 入口 | 部署路径 | 职责 |
@@ -52,17 +54,16 @@ VERSION                    语义版本（发版 bump）
 ## 构建与发布
 
 本地启动 B 端时，Vite 默认把 `/api/` 和 `/oauth/` 代理到
-`http://127.0.0.1:30002`，从而保留 OAuth、HttpOnly Cookie 和 CSRF 的同源会话模型：
+`http://127.0.0.1:30080`（一键 Kind 的统一 Ingress），从而保留 OAuth、HttpOnly Cookie 和 CSRF 的同源会话模型：
 
 ```bash
 npm run dev:b
 ```
 
-如网关不在本机（例如用 Kind 部署机 `192.168.31.91`），用 `VITE_DEV_API_TARGET` 覆盖代理目标，
-C 端同理：
+如网关在另一台局域网机器，用 `VITE_DEV_API_TARGET` 覆盖代理目标，C 端同理：
 
 ```bash
-$env:VITE_DEV_API_TARGET='http://192.168.31.91:30002'; npm run dev:b
+$env:VITE_DEV_API_TARGET='http://<Kind主机IP>:30080'; npm run dev:b
 ```
 
 仅调整 B 端页面样式时，可启动纯 UI 预览模式。该模式只在 Vite 开发服务器中生效，
@@ -83,29 +84,28 @@ npm run build        # 产出 dist-c + dist-b
 
 ## 本地联调 H5
 
-`dev:c`（预约/顾客端）和 `dev:b`（商户端）都已内置 Vite 同源代理：`/api` 和 `/oauth` 默认转发到本地 Kubernetes 网关 `http://127.0.0.1:30002`。当 Vite 在另一台局域网开发机运行时，将代理目标设置为运行 Kind 的机器地址；浏览器仍只访问本机 Vite，不直接调用网关：
+`dev:c`（预约/顾客端）和 `dev:b`（商户端）都已内置 Vite 同源代理：`/api` 和 `/oauth` 默认转发到本地 Kubernetes 的统一 Ingress `http://127.0.0.1:30080`。当 Vite 在另一台局域网开发机运行时，将代理目标设置为运行 Kind 的机器地址；浏览器仍只访问本机 Vite，不直接调用网关：
 
 ```powershell
 npm ci
-$env:VITE_DEV_API_TARGET = 'http://127.0.0.1:30002' # Kind/Kubernetes NodePort
-# 例如在 192.168.31.112 开发，Kind 在 192.168.31.91：
-# $env:VITE_DEV_API_TARGET = 'http://192.168.31.91:30002'
-# $env:VITE_DEV_API_TARGET = 'http://127.0.0.1:3002' # 直接运行网关
+$env:VITE_DEV_API_TARGET = 'http://127.0.0.1:30080'
+# 例如在开发机运行，Kind 在 <Kind主机IP>：
+# $env:VITE_DEV_API_TARGET = 'http://<Kind主机IP>:30080'
 npm run dev:c # C 端预约 H5，端口 5175
 # npm run dev:b # B 端商户 H5，端口 5176
 ```
 
-浏览器打开 `http://localhost:5175/`（C 端）或 `http://localhost:5176/index.b.html`（B 端）。也可以直接打开 Kind 部署的页面 `http://<部署机>:30082/a380/` 与 `/b/`：普通 `http://192.168.x.x` 不是 PKCE 需要的浏览器安全上下文，此时页面会走「调试放权」——调用 `POST /api/v1/dev/saas/session` 直接换调试会话（端口 5175/5176/30082 + 内网/回环地址才触发，服务端默认关闭，仅本地 Kind 清单开启，详见 docs/kind-lan-integration.md）。未开启放权的环境会静默回退正常 OAuth。代理会把后端会话 Cookie 保持为本地联调可用的形式，前端仍只使用服务端 HttpOnly 会话，不读取或保存 token。
+浏览器打开 `http://localhost:5175/`（C 端）或 `http://localhost:5176/index.b.html`（B 端）。也可以直接打开 Kind 部署的页面 `http://<Kind主机IP>:30080/a380/` 与 `/b/`：普通 `http://192.168.x.x` 不是 PKCE 需要的浏览器安全上下文，此时页面会走「调试放权」——调用 `POST /api/v1/dev/saas/session` 直接换调试会话（端口 5175/5176 + 内网/回环地址才触发，服务端默认关闭，仅本地 Kind 清单开启，详见 docs/kind-lan-integration.md）。未开启放权的环境会静默回退正常 OAuth。代理会把后端会话 Cookie 保持为本地联调可用的形式，前端仍只使用服务端 HttpOnly 会话，不读取或保存 token。
 
-首次使用 OAuth 登录时，回调地址必须与浏览器实际打开的地址完全一致。Kind 的回调同步脚本默认登记 `localhost` 和 `127.0.0.1` 的 Vite 开发端口；因此 `.112` 本地运行 Vite 时无需额外登记 IP。若必须从另一台机器打开开发服务，应配置 HTTPS 后再通过 `-AdditionalViteCOrigins` 和 `-AdditionalViteBOrigins` 登记该 HTTPS 源站。
+首次使用 OAuth 登录时，回调地址必须与浏览器实际打开的地址完全一致。Kind 的回调同步脚本默认登记 `localhost` 和 `127.0.0.1` 的 Vite 开发端口；若必须从另一台机器打开开发服务，应配置 HTTPS 后再通过 `-AdditionalViteCOrigins` 和 `-AdditionalViteBOrigins` 登记该 HTTPS 源站。
 
 ```powershell
-& 'D:\projects\cnb\open-im-server\scripts\deploy\sync-oidc-client-registry.ps1' `
-  -Environment kind -Context kind-gv-im-local -Namespace gv-im-local `
-  -DatabaseSecret gv-im-env -RootDatabaseSecretKey DB_PASSWORD `
-  -H5Base 'http://192.168.31.91:30082' `
-  -AdditionalViteCOrigins 'http://192.168.31.112:5175' `
-  -AdditionalViteBOrigins 'http://192.168.31.112:5176'
+& '..\open-im-server\scripts\deploy\sync-oidc-client-registry.ps1' `
+  -Environment kind -Context kind-open-im-local -Namespace open-im-local `
+  -DatabaseSecret open-im-env -RootDatabaseSecretKey DB_PASSWORD `
+  -H5Base 'http://<Kind主机IP>:30080' `
+  -AdditionalViteCOrigins 'http://<开发机IP>:5175' `
+  -AdditionalViteBOrigins 'http://<开发机IP>:5176'
 ```
 
 C 端使用已授权的 IM 用户，B 端使用已在 SaaS 租户中配置为运营人员的 IM 账号。
