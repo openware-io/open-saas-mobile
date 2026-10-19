@@ -75,7 +75,7 @@ const visibleCount = ref(PAGE_SIZE)
 const loadMoreTarget = ref(null)
 let observer
 
-const storeName = computed(() => activeContext.value?.storeName || activeContext.value?.organizationName || 'A380 KTV 门店')
+const storeName = computed(() => activeContext.value?.storeName || activeContext.value?.organizationName || 'OpenChat KTV 门店')
 /** 包厢价格（与后台「计价方案」同源），预约卡片展示，运营对客报价用。 */
 const ktvPricing = ref(null)
 /** 计费单位展示名，与后端 billingUnit 枚举同一口径。 */

@@ -3,7 +3,7 @@ import { getCurrency } from '../../shared/utils/money'
 const reservations = [
   {
     id: 1001,
-    reservationNo: 'A38020260914001',
+    reservationNo: 'OpenChat20260914001',
     status: 'PENDING',
     resourceId: 101,
     startAt: '2026-09-14T19:30:00',
@@ -13,7 +13,7 @@ const reservations = [
   },
   {
     id: 1002,
-    reservationNo: 'A38020260914002',
+    reservationNo: 'OpenChat20260914002',
     status: 'CONFIRMED',
     resourceId: 108,
     startAt: '2026-09-14T20:00:00',
@@ -23,7 +23,7 @@ const reservations = [
   },
   {
     id: 1003,
-    reservationNo: 'A38020260914003',
+    reservationNo: 'OpenChat20260914003',
     status: 'ARRIVED',
     resourceId: 112,
     startAt: '2026-09-14T18:30:00',
@@ -33,7 +33,7 @@ const reservations = [
   },
   {
     id: 1004,
-    reservationNo: 'A38020260913008',
+    reservationNo: 'OpenChat20260913008',
     status: 'CANCELLED',
     resourceId: 103,
     startAt: '2026-09-13T21:00:00',
@@ -113,8 +113,8 @@ export async function listStores() {
   // 门店币种由租户币种写穿（tnt_store.default_currency）：预览态取全局当前币种，不写死币种码
   const currencyCode = getCurrency()
   return [
-    { id: 1, code: 'A380-SH-001', name: 'A380 上海旗舰店', businessType: 'KTV', defaultCurrency: currencyCode, status: 'ENABLED' },
-    { id: 2, code: 'A380-HZ-001', name: 'A380 杭州湖滨店', businessType: 'KTV', defaultCurrency: currencyCode, status: 'ENABLED' },
+    { id: 1, code: 'OpenChat-SH-001', name: 'OpenChat 上海旗舰店', businessType: 'KTV', defaultCurrency: currencyCode, status: 'ENABLED' },
+    { id: 2, code: 'OpenChat-HZ-001', name: 'OpenChat 杭州湖滨店', businessType: 'KTV', defaultCurrency: currencyCode, status: 'ENABLED' },
   ]
 }
 
@@ -334,5 +334,5 @@ export async function listPaymentMethods() {
 }
 
 export async function getWalletTokenConfig() {
-  return { brandName: 'A380币', ratio: 100 }
+  return { brandName: 'OpenChat币', ratio: 100 }
 }

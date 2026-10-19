@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { readFile } from 'node:fs/promises'
 
 /**
- * 「客户待确认加项」聚合提醒 + 集中处理的接线守卫（B 端 A380 商户端 H5）。
+ * 「客户待确认加项」聚合提醒 + 集中处理的接线守卫（B 端 OpenChat 商户端 H5）。
  *
  * 口径：C 端客户自助加项落 `PENDING_APPROVAL`，确认后才计入应收。提醒必须**主动可见且能直达处理**，
  * 而不是只有打开某张订单详情才看得到。数据源只有一个：服务端聚合接口

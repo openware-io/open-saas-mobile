@@ -1,9 +1,9 @@
 <template>
   <div class="page">
-    <header v-if="state === 'authed'" class="topbar" aria-label="A380后台">
-      <span class="brand-mark">A<sup>380</sup></span>
-      <span class="brand-copy"><strong>A380 商户工作台</strong><small>经营数据与订单履约</small></span>
-      <span v-if="activeContext" class="context-pill" title="A380租户">{{ activeContext.storeName || activeContext.organizationName || '全部门店' }}</span>
+    <header v-if="state === 'authed'" class="topbar" aria-label="OpenChat后台">
+      <span class="brand-mark">OC</span>
+      <span class="brand-copy"><strong>OpenChat 商户工作台</strong><small>经营数据与订单履约</small></span>
+      <span v-if="activeContext" class="context-pill" title="OpenChat租户">{{ activeContext.storeName || activeContext.organizationName || '全部门店' }}</span>
     </header>
 
     <main class="content">
@@ -46,7 +46,7 @@ import { ensureOperatorAuth } from '@/b-end/oauth'
 
 const state = ref('loading')
 const errorTitle = ref('暂未开通运营权限')
-const errorDescription = ref('你当前使用的 IM 账号尚未开通 A380 商户端的运营权限。')
+const errorDescription = ref('你当前使用的 IM 账号尚未开通 OpenChat 商户端的运营权限。')
 const availableContexts = ref([])
 const activeContext = ref(null)
 provide('activeContext', activeContext)
@@ -61,20 +61,20 @@ async function auth(force = false, contextId = null) {
   } catch (e) {
     if (e?.code === 'NO_OPERATOR_ROLE') {
       errorTitle.value = '尚未开通运营权限'
-      errorDescription.value = '当前 IM 账号已完成登录，但还没有 A380 商户端的运营角色。'
+      errorDescription.value = '当前 IM 账号已完成登录，但还没有 OpenChat 商户端的运营角色。'
     } else if (e?.code === 'IM_SESSION_EXPIRED') {
       errorTitle.value = 'IM 登录已失效'
-      errorDescription.value = '请返回 IM 重新登录后，再进入 A380后台。'
+      errorDescription.value = '请返回 IM 重新登录后，再进入 OpenChat后台。'
     } else if (e?.code === 'IM_BRIDGE_AUTH_FAILED') {
       errorTitle.value = '无法完成 IM 授权'
-      errorDescription.value = '请返回 IM 后重新进入 A380后台；如持续失败请更新 IM App。'
+      errorDescription.value = '请返回 IM 后重新进入 OpenChat后台；如持续失败请更新 IM App。'
     } else if (e?.code === 'CONTEXT_SELECTION_REQUIRED') {
       errorTitle.value = '请选择运营门店'
       errorDescription.value = '当前账号可访问多个门店，请选择要进入的运营门店。'
       availableContexts.value = Array.isArray(e.contexts) ? e.contexts : []
     } else if (e?.code === 'PKCE_UNAVAILABLE') {
       errorTitle.value = '当前环境不支持授权'
-      errorDescription.value = '请从已更新的 IM App 重新进入 A380后台，或使用 HTTPS / localhost 地址访问。'
+      errorDescription.value = '请从已更新的 IM App 重新进入 OpenChat后台，或使用 HTTPS / localhost 地址访问。'
     } else {
       // 只有带错误码的业务异常才展示原始 message；其余（网络/未知异常）用统一话术，避免把框架原文弹给运营人员。
       console.error('[a380-b] auth failed', e)

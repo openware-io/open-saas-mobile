@@ -1,6 +1,6 @@
 import { applyResponseCurrency } from '../shared/utils/money'
 
-// B 端（A380后台）OAuth 客户端：标准接入流程（PKCE + 授权码 + token + bind + 运营角色校验 + 上下文选择）
+// B 端（OpenChat后台）OAuth 客户端：标准接入流程（PKCE + 授权码 + token + bind + 运营角色校验 + 上下文选择）
 // 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> /identity/oauth/im/callback -> 服务端会话 -> /auth/contexts 校验运营角色 -> /auth/context/select 选上下文
 // 不改 open-chat-app：入口由 IM 后台「小程序·服务管理」登记服务项(link 指向本 H5)，跳转+授权走 IM 开放平台。
 
@@ -258,9 +258,9 @@ function hasNativeBridge() {
 
 function nativeBridgeAuthorizationError(error) {
   if (error?.code === 'im_session_expired') {
-    return authError('IM_SESSION_EXPIRED', 'IM 登录已失效，请返回 IM 重新登录后再进入 A380后台。')
+    return authError('IM_SESSION_EXPIRED', 'IM 登录已失效，请返回 IM 重新登录后再进入 OpenChat后台。')
   }
-  return authError('IM_BRIDGE_AUTH_FAILED', '无法完成 IM 授权，请返回 IM 后重新进入 A380后台。')
+  return authError('IM_BRIDGE_AUTH_FAILED', '无法完成 IM 授权，请返回 IM 后重新进入 OpenChat后台。')
 }
 
 async function ensureOperatorAuth(options = {}) {
