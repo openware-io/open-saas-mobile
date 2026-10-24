@@ -1492,6 +1492,7 @@ function render() {
       ? renderKtvBookForm(Number(parts[2] || 0))
       : renderKtvBookFormFromRoom(Number(parts[1] || 0));
   }
+  if (route === 'my-hotel-orders') return renderRealHotelOrders();
   if (parts[0] === 'real-hotel') return renderRealHotelDetail(Number(parts[1] || 0));
   if (parts[0] === 'service') {
     const service = serviceById(parts[1]);

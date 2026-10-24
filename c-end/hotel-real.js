@@ -120,8 +120,32 @@ async function bookRealHotel(hotelId) {
     app.innerHTML = pageHead('预订成功', '<span></span>') +
       '<section class="success"><div>✓</div><h1>预订已提交</h1><p>' + escapeHtml(booking.bookingNo) + '</p>' +
       '<p>应付 ' + hotelMoney(booking.amountMinor, booking.currency) + ' · 状态 ' + escapeHtml(booking.status) + '</p></section>' +
-      '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" data-route="my-orders">查看订单</button></footer>';
+      '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" data-route="my-hotel-orders">查看订单</button></footer>';
   } catch (error) {
     showToast(error.message || '预订失败');
+  }
+}
+
+async function renderRealHotelOrders() {
+  app.innerHTML = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') +
+    '<section class="list" id="real-hotel-orders"><p class="empty">订单加载中…</p></section>';
+  try {
+    var orders = await hotelApi('/business/hotel/bookings');
+    if (!routeIsCurrent('my-hotel-orders')) return;
+    var list = document.querySelector('#real-hotel-orders');
+    if (!list) return;
+    if (!orders || !orders.length) {
+      list.innerHTML = emptyState('🏨', '暂无酒店订单', '去酒店页选择房型并提交预订');
+      return;
+    }
+    list.innerHTML = orders.map(function (order) {
+      return '<article class="venue-card"><div class="venue-copy"><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
+        '<p>' + escapeHtml(order.roomType || '') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p>' +
+        '<p>' + escapeHtml(order.checkInDate) + ' ~ ' + escapeHtml(order.checkOutDate) + '</p>' +
+        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span> · ' + escapeHtml(order.status) + '</p></div></article>';
+    }).join('');
+  } catch (error) {
+    var list = document.querySelector('#real-hotel-orders');
+    if (list) list.innerHTML = emptyState('🏨', '订单加载失败', error.message || '请稍后重试');
   }
 }
