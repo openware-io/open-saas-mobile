@@ -1492,9 +1492,11 @@ function render() {
       ? renderKtvBookForm(Number(parts[2] || 0))
       : renderKtvBookFormFromRoom(Number(parts[1] || 0));
   }
+  if (parts[0] === 'real-hotel') return renderRealHotelDetail(Number(parts[1] || 0));
   if (parts[0] === 'service') {
     const service = serviceById(parts[1]);
     if (!service) return renderHome();
+    if (service.id === 'hotel') return renderRealHotelList();
     if (service.kind === 'venue') return renderVenueList(service.id);
     if (service.kind === 'catalog') return renderCatalog(service.id);
     if (service.kind === 'business') return renderKtvBooking();
@@ -1524,6 +1526,10 @@ document.addEventListener('click', event => {
     else go(retryRoute);
     return;
   }
+  const realHotel = event.target.closest('[data-real-hotel]');
+  if (realHotel) { go('real-hotel/' + realHotel.dataset.realHotel); return; }
+  if (event.target.closest('[data-hotel-quote]')) { quoteRealHotel(Number(currentRoute().split('/').pop())); return; }
+  if (event.target.closest('[data-hotel-book]')) { bookRealHotel(Number(currentRoute().split('/').pop())); return; }
   const route = event.target.closest('[data-route]')?.dataset.route;
   if (route) return go(route);
   const tab = event.target.closest('[data-tab]');
