@@ -142,10 +142,23 @@ async function renderRealHotelOrders() {
       return '<article class="venue-card"><div class="venue-copy"><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
         '<p>' + escapeHtml(order.roomType || '') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p>' +
         '<p>' + escapeHtml(order.checkInDate) + ' ~ ' + escapeHtml(order.checkOutDate) + '</p>' +
-        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span> · ' + escapeHtml(order.status) + '</p></div></article>';
+        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span> · ' + escapeHtml(order.status) + '</p></div>' + (order.status === 'PENDING_PAYMENT' ? '<button class="ghost-button" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') + '</article>';
     }).join('');
   } catch (error) {
     var list = document.querySelector('#real-hotel-orders');
     if (list) list.innerHTML = emptyState('🏨', '订单加载失败', error.message || '请稍后重试');
   }
 }
+document.addEventListener('click', async function (event) {
+  var button = event.target.closest('[data-cancel-booking]');
+  if (!button) return;
+  event.preventDefault();
+  if (!window.confirm('取消该酒店预订？')) return;
+  try {
+    await hotelApi('/business/hotel/bookings/' + encodeURIComponent(button.getAttribute('data-cancel-booking')) + '/cancel', { method: 'POST' });
+    showToast('预订已取消');
+    await renderRealHotelOrders();
+  } catch (error) {
+    showToast(error.message || '取消失败');
+  }
+});
