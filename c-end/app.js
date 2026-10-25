@@ -1845,7 +1845,7 @@ function renderLogin() {
     button.disabled = true;
     button.textContent = '登录中…';
     try {
-      const loginType = identifier.indexOf('@') >= 0 ? 'EMAIL' : 'PHONE';
+      const loginType = identifier.indexOf('@') >= 0 ? 'email' : 'phone';
       await window.A380OAuth.loginWithPassword(loginType, identifier, password);
       document.body.classList.remove('login-mode');
       await loadWalletTokenConfig();
