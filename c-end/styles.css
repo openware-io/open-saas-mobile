@@ -657,3 +657,17 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .compat-webview83 .travel-hero {
   align-items: flex-start;
 }
+
+/* Hotel form picker rows: the label already carries the field name. */
+.form-card label .booking-picker-row {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 0;
+  border-top: 0;
+  padding: 4px 0;
+}
+.form-card label .booking-field-copy strong {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

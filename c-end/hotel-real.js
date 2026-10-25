@@ -61,6 +61,11 @@ function hotelDateOptions(startOffset, count) {
   return options;
 }
 
+function hotelDateShort(value, offset) {
+  var prefix = offset === 0 ? '今天' : offset === 1 ? '明天' : offset === 2 ? '后天' : '周' + ['日','一','二','三','四','五','六'][new Date(value + 'T00:00:00').getDay()];
+  return prefix + ' ' + value.slice(5).replace('-', '/');
+}
+
 function hotelPickerField(id, label, value, display) {
   return '<label>' + label +
     '<input id="' + id + '" name="' + id + '" type="hidden" value="' + escapeHtml(String(value)) + '">' +
@@ -100,8 +105,8 @@ async function renderRealHotelDetail(hotelId) {
       '<button type="button" class="booking-picker-row" data-hotel-picker="roomType"><span class="booking-field-copy"><strong data-picker-display="roomType">' + escapeHtml((roomTypes[0] && roomTypes[0].name) || '选择房型') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
       '<label>价格计划<input id="hotel-rate-plan" name="hotel-rate-plan" type="hidden" value="' + (ratePlans[0] ? ratePlans[0].id : '') + '">' +
       '<button type="button" class="booking-picker-row" data-hotel-picker="ratePlan"><span class="booking-field-copy"><strong data-picker-display="ratePlan">' + escapeHtml((ratePlans[0] && ratePlans[0].name) || '选择价格计划') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
-      hotelPickerField('hotel-check-in', '入住', dateOffset(1), bookingDateLabel(dateOffset(1), 1)) +
-      hotelPickerField('hotel-check-out', '退房', dateOffset(2), bookingDateLabel(dateOffset(2), 2)) +
+      hotelPickerField('hotel-check-in', '入住', dateOffset(1), hotelDateShort(dateOffset(1), 1)) +
+      hotelPickerField('hotel-check-out', '退房', dateOffset(2), hotelDateShort(dateOffset(2), 2)) +
       hotelPickerField('hotel-rooms', '房间数', 1, '1 间') +
       '<button class="primary-button" data-hotel-quote>查询实时价格</button></section>' +
       '<section id="hotel-quote"></section>' +
