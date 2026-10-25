@@ -8,7 +8,9 @@
 (function () {
   'use strict';
 
-  var APP_ID = 'saas-a380-c';
+  // App identity is configurable; the legacy default is kept for old links.
+  // Tenant and path must not participate in appId.
+  var APP_ID = window.SAAS_APP_ID || 'saas-a380-c';
   var REDIRECT_URI = window.location.origin + window.location.pathname;
 
   var PKCE_KEY = 'saas_c_pkce_verifier';
