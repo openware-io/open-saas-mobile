@@ -671,3 +671,19 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+.travel-search-form > label {
+  grid-template-columns: 88px minmax(0, 1fr);
+  white-space: nowrap;
+}
+.travel-search-form > label .booking-picker-row {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 0;
+  border-top: 0;
+  padding: 4px 0;
+}
+.travel-search-form > label .booking-field-copy strong {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}

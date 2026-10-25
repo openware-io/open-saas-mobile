@@ -949,6 +949,11 @@ async function renderPay(orderId, payable) {
     '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" type="submit">确认支付</button></footer></form>';
 }
 
+function travelDateShort(value, offset) {
+  var prefix = offset === 0 ? '今天' : offset === 1 ? '明天' : offset === 2 ? '后天' : '周' + ['日','一','二','三','四','五','六'][new Date(value + 'T00:00:00').getDay()];
+  return prefix + ' ' + value.slice(5).replace('-', '/');
+}
+
 var travelPickerOptions = {};
 
 function travelPickerField(name, label, value, display) {
@@ -992,7 +997,7 @@ function renderTravelSearch(kind) {
   app.innerHTML = `${pageHead(service.name)}
     <section class="travel-hero"><span>${service.icon}</span><div><h2>${isFlight ? '国内机票预订' : '安心出行 · 快速叫车'}</h2><p>${isFlight ? '机场及航班信息均为前端 mock' : '车型、司机和价格均为前端 mock'}</p></div></section>
     <form id="travel-search-form" class="travel-search-form" data-kind="${kind}">
-      ${isFlight ? `<div class="route-fields"><label>出发城市<input required name="from" value="${escapeHtml(state.travel.from)}"></label><button type="button" data-swap-route aria-label="交换出发和到达">⇄</button><label>到达城市<input required name="to" value="${escapeHtml(state.travel.to)}"></label></div>${travelPickerField('date', '出发日期', travelDate, bookingDateLabel(travelDate, 1))}${travelPickerField('people', '乘机人数', '1成人', '1 成人')}` : `<label>上车地点<input required name="pickup" value="${escapeHtml(state.travel.pickup)}"></label><button class="location-button" type="button" data-toast="已使用 mock 定位：深圳宝安国际机场 T3">◎ 使用当前位置</button><label>目的地<input required name="dropoff" value="${escapeHtml(state.travel.dropoff)}"></label>${travelPickerField('dateTime', '用车时间', travelDateTime, bookingDateLabel(travelDate, 1) + ' 09:30')}`}
+      ${isFlight ? `<div class="route-fields"><label>出发城市<input required name="from" value="${escapeHtml(state.travel.from)}"></label><button type="button" data-swap-route aria-label="交换出发和到达">⇄</button><label>到达城市<input required name="to" value="${escapeHtml(state.travel.to)}"></label></div>${travelPickerField('date', '出发日期', travelDate, travelDateShort(travelDate, 1))}${travelPickerField('people', '乘机人数', '1成人', '1 成人')}` : `<label>上车地点<input required name="pickup" value="${escapeHtml(state.travel.pickup)}"></label><button class="location-button" type="button" data-toast="已使用 mock 定位：深圳宝安国际机场 T3">◎ 使用当前位置</button><label>目的地<input required name="dropoff" value="${escapeHtml(state.travel.dropoff)}"></label>${travelPickerField('dateTime', '用车时间', travelDateTime, travelDateShort(travelDate, 1) + ' 09:30')}`}
       <button class="primary-button search-submit" type="submit">${isFlight ? '查询机票' : '立即叫车'}</button>
     </form>
     <section class="travel-benefits"><span>✓ 价格透明</span><span>✓ 服务接入中</span><span>✓ 不会产生订单</span></section>`;
