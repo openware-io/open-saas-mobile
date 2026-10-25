@@ -122,6 +122,18 @@ function currentRoute() { return location.hash.replace(/^#\/?/, '') || 'home'; }
  * 路由守卫：只有「发起请求时的路由」仍是当前路由，才允许把结果画到屏上。
  * 请求回来晚（用户已经点走 / 按了返回）就整批丢弃，绝不把上一页的金额、状态或错误页画到当前页。
  */
+// WebView 83 (MI 9) lacks aspect-ratio, inset and flex gap.
+// Add a compatibility class so CSS can use margin/fixed-height fallbacks.
+(function () {
+  if (typeof document === 'undefined' || !document.documentElement) return;
+  try {
+    if (!window.CSS || !window.CSS.supports || !window.CSS.supports('aspect-ratio', '1 / 1')) {
+      document.documentElement.classList.add('compat-webview83');
+    }
+  } catch (error) {
+    document.documentElement.classList.add('compat-webview83');
+  }
+})();
 function routeIsCurrent(route) { return currentRoute() === route; }
 function showToast(message) {
   toast.textContent = message;

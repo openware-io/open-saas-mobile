@@ -156,7 +156,7 @@ document.addEventListener('click', async function (event) {
   var button = event.target.closest('[data-cancel-booking]');
   if (!button) return;
   event.preventDefault();
-  if (!window.confirm('取消该酒店预订？')) return;
+  if (!(await showConfirm('取消酒店预订', '取消后不可恢复。', { confirmText: '确认取消', cancelText: '再想想' }))) return;
   try {
     await hotelApi('/business/hotel/bookings/' + encodeURIComponent(button.getAttribute('data-cancel-booking')) + '/cancel', { method: 'POST' });
     showToast('预订已取消');
