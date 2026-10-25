@@ -38,7 +38,7 @@ async function renderRealHotelList() {
         '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
         '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
         '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
-        '<p><span class="price">查看房型</span></p></div></article>';
+        '<p><span class="hotel-link">查看房型</span></p></div></article>';
     }).join('');
   } catch (error) {
     var list = document.querySelector('#real-hotel-list');

@@ -592,3 +592,4 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .hotel-detail-head { display: flex; gap: 12px; align-items: center; }
 .hotel-detail-head h2 { margin: 0; }
 .hotel-detail-head p { margin: 4px 0 0; }
+.hotel-link { color: var(--primary-dark); font-weight: 700; }
