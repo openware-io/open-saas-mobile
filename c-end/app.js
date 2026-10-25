@@ -949,13 +949,50 @@ async function renderPay(orderId, payable) {
     '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" type="submit">确认支付</button></footer></form>';
 }
 
+var travelPickerOptions = {};
+
+function travelPickerField(name, label, value, display) {
+  return '<label>' + label +
+    '<input type="hidden" name="' + name + '" value="' + escapeHtml(String(value)) + '">' +
+    '<button type="button" class="booking-picker-row" data-travel-picker="' + name + '">' +
+      '<span class="booking-field-copy"><strong data-picker-display="' + name + '">' + escapeHtml(display) + '</strong></span>' +
+      '<span class="booking-chevron">›</span>' +
+    '</button></label>';
+}
+
+function travelPickerTitle(name) {
+  return { date: '选择出发日期', people: '选择乘机人数', dateTime: '选择用车时间' }[name] || '请选择';
+}
+
 function renderTravelSearch(kind) {
   const isFlight = kind === 'flights';
   const service = serviceById(kind);
+  const travelDate = dateOffset(1);
+  const travelDateTime = travelDate + 'T09:30';
+  travelPickerOptions.date = Array.from({ length: 14 }, function (_, index) {
+    const value = dateOffset(index);
+    return { value: value, label: bookingDateLabel(value, index), hint: value.replace(/-/g, '/') };
+  });
+  travelPickerOptions.people = [
+    { value: '1成人', label: '1 成人', hint: '' },
+    { value: '2成人', label: '2 成人', hint: '' },
+    { value: '2成人 1儿童', label: '2 成人 1 儿童', hint: '' }
+  ];
+  travelPickerOptions.dateTime = [];
+  for (let day = 1; day <= 7; day++) {
+    const date = dateOffset(day);
+    ['09:30', '14:00', '18:00'].forEach(function (time) {
+      travelPickerOptions.dateTime.push({
+        value: date + 'T' + time,
+        label: bookingDateLabel(date, day) + ' ' + time,
+        hint: date.replace(/-/g, '/')
+      });
+    });
+  }
   app.innerHTML = `${pageHead(service.name)}
     <section class="travel-hero"><span>${service.icon}</span><div><h2>${isFlight ? '国内机票预订' : '安心出行 · 快速叫车'}</h2><p>${isFlight ? '机场及航班信息均为前端 mock' : '车型、司机和价格均为前端 mock'}</p></div></section>
     <form id="travel-search-form" class="travel-search-form" data-kind="${kind}">
-      ${isFlight ? `<div class="route-fields"><label>出发城市<input required name="from" value="${escapeHtml(state.travel.from)}"></label><button type="button" data-swap-route aria-label="交换出发和到达">⇄</button><label>到达城市<input required name="to" value="${escapeHtml(state.travel.to)}"></label></div><label>出发日期<input required name="date" type="date" min="${dateOffset(0)}" value="${dateOffset(1)}"></label><label>乘机人数<select name="people"><option>1成人</option><option>2成人</option><option>2成人 1儿童</option></select></label>` : `<label>上车地点<input required name="pickup" value="${escapeHtml(state.travel.pickup)}"></label><button class="location-button" type="button" data-toast="已使用 mock 定位：深圳宝安国际机场 T3">◎ 使用当前位置</button><label>目的地<input required name="dropoff" value="${escapeHtml(state.travel.dropoff)}"></label><label>用车时间<input required name="dateTime" type="datetime-local" value="${dateOffset(1)}T09:30"></label>`}
+      ${isFlight ? `<div class="route-fields"><label>出发城市<input required name="from" value="${escapeHtml(state.travel.from)}"></label><button type="button" data-swap-route aria-label="交换出发和到达">⇄</button><label>到达城市<input required name="to" value="${escapeHtml(state.travel.to)}"></label></div>${travelPickerField('date', '出发日期', travelDate, bookingDateLabel(travelDate, 1))}${travelPickerField('people', '乘机人数', '1成人', '1 成人')}` : `<label>上车地点<input required name="pickup" value="${escapeHtml(state.travel.pickup)}"></label><button class="location-button" type="button" data-toast="已使用 mock 定位：深圳宝安国际机场 T3">◎ 使用当前位置</button><label>目的地<input required name="dropoff" value="${escapeHtml(state.travel.dropoff)}"></label>${travelPickerField('dateTime', '用车时间', travelDateTime, bookingDateLabel(travelDate, 1) + ' 09:30')}`}
       <button class="primary-button search-submit" type="submit">${isFlight ? '查询机票' : '立即叫车'}</button>
     </form>
     <section class="travel-benefits"><span>✓ 价格透明</span><span>✓ 服务接入中</span><span>✓ 不会产生订单</span></section>`;
@@ -1550,6 +1587,15 @@ function render() {
 }
 
 document.addEventListener('click', event => {
+  const travelField = event.target.closest('[data-travel-picker]');
+  if (travelField) {
+    const fieldName = travelField.getAttribute('data-travel-picker');
+    const options = travelPickerOptions[fieldName] || [];
+    if (options.length && window.A380Picker) {
+      window.A380Picker.open('#travel-search-form', fieldName, travelPickerTitle(fieldName), options);
+    }
+    return;
+  }
   const venueField = event.target.closest('[data-venue-picker]');
   if (venueField) {
     const formSelector = venueField.getAttribute('data-form') || '#venue-order-form';
