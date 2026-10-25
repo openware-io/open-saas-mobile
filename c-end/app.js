@@ -1073,6 +1073,9 @@ async function ensureRoomTypeCache() {
  * 历史行只有 resourceId，能从房态反查到房型时也按房型取价（否则按包厢取价 + 门店统一价兜底）。
  */
 function reservationPricingRef(r) {
+  // 只给仍需到店/进行中的预约取实时房价；已取消/未到店/已完成的行不再触发 KTV 取价，
+  // 避免当前门店没有 KTV 业务时产生 403。列表仍展示这些历史行。
+  if (r.status === 'CANCELLED' || r.status === 'NO_SHOW' || r.status === 'COMPLETED') return null;
   var room = ktvRoomCache[r.resourceId];
   return {
     roomTypeId: r.roomTypeId != null ? r.roomTypeId : (room && room.roomTypeId != null ? room.roomTypeId : null),
