@@ -7,7 +7,7 @@ import { expect, test, vi } from 'vitest'
  *
  * 现象：我的消费 → 加服务项 → 页面永远停在「加载中…」。
  * 真因（两层）：
- *   1) 接口失败：C 端消费者会话（appId=saas-a380-c）的权限快照来自
+ *   1) 接口失败：C 端消费者会话（appId=saas-c）的权限快照来自
  *      iam_consumer_application.permissions_json，只有 reservation.view / reservation.create；
  *      而 `GET /api/v1/business/orders/{id}/items` 要求商户权限码 order.view
  *      （open-im-server OrderItemController#listItems），于是回 403 PERMISSION_DENIED。

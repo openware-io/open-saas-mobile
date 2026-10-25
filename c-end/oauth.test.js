@@ -14,8 +14,8 @@ function sessionStorage() {
 test('refreshes CSRF token once when context selection rejects a stale token', async () => {
   const source = await readFile(new URL('./oauth.js', import.meta.url), 'utf8')
   const fetch = vi.fn()
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, appId: 'saas-a380-c' }) })
-    .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ contextId: 'consumer:saas-a380-c:100:100:100' }] }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ authenticated: true, appId: 'saas-c' }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ items: [{ contextId: 'consumer:saas-c:100:100:100' }] }) })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ csrfToken: 'stale-token' }) })
     .mockResolvedValueOnce({ ok: false, status: 403, json: async () => ({ code: 'CSRF_TOKEN_INVALID', message: 'missing or invalid CSRF token' }) })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ csrfToken: 'fresh-token' }) })

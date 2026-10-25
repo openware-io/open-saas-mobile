@@ -15,7 +15,7 @@ const request = axios.create({
 
 async function loadCsrfToken() {
   if (csrfToken) return csrfToken
-  const response = await axios.get('/api/v1/auth/csrf?appId=saas-a380-h5', {
+  const response = await axios.get('/api/v1/auth/csrf?appId=saas-b', {
     baseURL: cfg.apiBase,
     withCredentials: true,
     timeout: 15000,
@@ -32,7 +32,7 @@ request.interceptors.request.use(async (config) => {
   config.headers['Accept-Language'] = 'zh'
   // 声明所处应用族：网关据此选用 B 端（运营后台）会话，避免与同浏览器内的 C 端会话串号，
   // 否则运营动作会拿消费端会话鉴权而全部 403（真机实测）。
-  config.headers['X-Saas-App'] = 'saas-a380-h5'
+  config.headers['X-Saas-App'] = 'saas-b'
   if (c.contract) config.headers['X-Client-Contract'] = c.contract
   if (!SAFE_METHODS.has((config.method || 'get').toLowerCase())) {
     config.headers['X-CSRF-Token'] = await loadCsrfToken()

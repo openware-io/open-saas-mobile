@@ -4,7 +4,7 @@ import { applyResponseCurrency } from '../shared/utils/money'
 // 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> /identity/oauth/im/callback -> 服务端会话 -> /auth/contexts 校验运营角色 -> /auth/context/select 选上下文
 // 不改 open-chat-app：入口由 IM 后台「小程序·服务管理」登记服务项(link 指向本 H5)，跳转+授权走 IM 开放平台。
 
-const APP_ID = import.meta.env.VITE_IM_APP_ID || 'saas-a380-h5'
+const APP_ID = import.meta.env.VITE_IM_APP_ID || 'saas-b'
 const REDIRECT_URI = window.location.origin + window.location.pathname
 
 const B_OPERATOR_ROLES = ['tenant.owner', 'store.manager', 'store.cashier', 'store.finance']

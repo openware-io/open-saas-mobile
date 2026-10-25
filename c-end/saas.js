@@ -77,7 +77,7 @@
       'Content-Type': 'application/json',
       'Accept-Language': 'zh',
       // 声明所处应用族：网关据此选用 C 端会话；否则同浏览器内与运营后台的 B 端会话可能串号。
-      'X-Saas-App': 'saas-a380-c'
+      'X-Saas-App': 'saas-c'
     };
     if (contract) h['X-Client-Contract'] = contract;
     if (write) {
@@ -89,7 +89,7 @@
 
   async function ensureCsrfToken() {
     if (csrfToken) return csrfToken;
-    var response = await fetchWithTimeout('/api/v1/auth/csrf?appId=saas-a380-c',
+    var response = await fetchWithTimeout('/api/v1/auth/csrf?appId=saas-c',
       { credentials: 'same-origin' }, requestTimeoutMs());
     if (!response.ok) throw new Error('无法获取 CSRF token');
     var payload = await response.json();
@@ -859,7 +859,7 @@
 
   /**
    * 房型列表 = 后台房型字典 GET /api/v1/admin/resources/types（字段 id / code / name / capacity / status）。
-   * 该接口虽是后台路径，C 端会话（appId=saas-a380-c）已可直接读取（联调实测 200，见提交说明）；
+   * 该接口虽是后台路径，C 端会话（appId=saas-c）已可直接读取（联调实测 200，见提交说明）；
    * 读不到时按既有降级：用 /business/resources 的资源列表按房型归并（绝不拿包厢号当房型）。
    */
   async function listKtvRoomTypes() {
