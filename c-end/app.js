@@ -783,17 +783,39 @@ function renderVenueDetail(category, venueIndex = 0) {
     <section class="detail-card"><h3>购买须知</h3><p>本页面为前端 mock 演示；请按预约时间到店，实际服务内容以门店确认为准。</p></section>`;
 }
 
+var venuePickerOptions = {};
+
+function venuePickerField(formSelector, name, label, value, display) {
+  return '<label>' + label +
+    '<input type="hidden" name="' + name + '" value="' + escapeHtml(String(value)) + '">' +
+    '<button type="button" class="booking-picker-row" data-venue-picker="' + name + '" data-form="' + formSelector + '">' +
+      '<span class="booking-field-copy"><strong data-picker-display="' + name + '">' + escapeHtml(display) + '</strong></span>' +
+      '<span class="booking-chevron">›</span>' +
+    '</button></label>';
+}
+
+function venuePickerTitle(name) {
+  return { date: '选择日期', time: '选择时间', slot: '选择台位/包厢' }[name] || '请选择';
+}
+
 function renderBooking(category, venueIndex = 0, packageIndex = 0) {
   const venue = data.venues[category];
   const pkg = venue.packages[packageIndex];
   const name = venue.names[venueIndex] || venue.names[0];
+  const venueDate = dateOffset(1);
+  venuePickerOptions.date = Array.from({ length: 14 }, function (_, index) {
+    const value = dateOffset(index);
+    return { value: value, label: bookingDateLabel(value, index), hint: value.replace(/-/g, '/') };
+  });
+  venuePickerOptions.time = bookingPickerOptions('time');
+  venuePickerOptions.slot = venue.slots.map(function (slot) { return { value: slot, label: slot, hint: '' }; });
   app.innerHTML = `${pageHead('填写预约信息', '<span></span>')}
     <section class="summary-card"><img src="${image(venue.images[venueIndex % venue.images.length])}" alt="${name}"><div><h2>${name}</h2><p>${pkg.name}</p><strong>${mockMoney(pkg.price)}</strong></div></section>
     <form id="venue-order-form" class="form-stack" data-category="${category}" data-venue="${venueIndex}" data-package="${packageIndex}">
       <section class="form-card"><h2>到店信息</h2>
-        <label>${venue.dateLabel}<input required name="date" type="date" min="${dateOffset(0)}" value="${dateOffset(1)}"></label>
-        <label>${venue.arrivalLabel}<select required name="time">${timeSelectOptions('19:30')}</select></label>
-        <label>${category === 'hotel' ? '房间数量' : '选择台位/包厢'}<select name="slot">${venue.slots.map(slot => `<option>${slot}</option>`).join('')}</select></label>
+        ${venuePickerField('#venue-order-form', 'date', venue.dateLabel, venueDate, bookingDateLabel(venueDate, 1))}
+        ${venuePickerField('#venue-order-form', 'time', venue.arrivalLabel, '19:30', '19:30')}
+        ${venuePickerField('#venue-order-form', 'slot', category === 'hotel' ? '房间数量' : '选择台位/包厢', venue.slots[0], venue.slots[0])}
       </section>
       <section class="form-card"><h2>预约人信息</h2>
         <label>姓名<input required name="name" autocomplete="name" placeholder="请输入预约人姓名"></label>
@@ -1528,6 +1550,16 @@ function render() {
 }
 
 document.addEventListener('click', event => {
+  const venueField = event.target.closest('[data-venue-picker]');
+  if (venueField) {
+    const formSelector = venueField.getAttribute('data-form') || '#venue-order-form';
+    const fieldName = venueField.getAttribute('data-venue-picker');
+    const options = venuePickerOptions[fieldName] || [];
+    if (options.length && window.A380Picker) {
+      window.A380Picker.open(formSelector, fieldName, venuePickerTitle(fieldName), options);
+    }
+    return;
+  }
   const pickerField = event.target.closest('[data-booking-picker]');
   if (pickerField) { openBookingPicker(pickerField.dataset.bookingPicker); return; }
   const pickerOption = event.target.closest('[data-picker-value]');
