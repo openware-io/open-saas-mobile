@@ -13,6 +13,7 @@ test('酒店订单使用独立卡片，取消按钮不落入 venue-card 网格',
 test('酒店列表返回时优先显示缓存并带重试入口', async () => {
   const source = await readFile(new URL('./hotel-real.js', import.meta.url), 'utf8')
   expect(source).toContain('hotelListCache')
+  expect(source).toContain('data-route="my-hotel-orders"')
   expect(source).toContain('data-retry="service/hotel"')
   expect(source).toContain('已显示上次结果')
 })
