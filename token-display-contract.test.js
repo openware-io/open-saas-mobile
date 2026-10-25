@@ -257,7 +257,7 @@ test('C 端 money.js 与 B 端 money.js 代币/积分口径逐字一致', async 
 test('服务端未发布 tokenAmount：按租户比例在前端换算（字段存在时以服务端值为准）', async () => {
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 10 })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 10 })
     if (target.includes('/me/wallet/ledger')) {
       return jsonResponse([{ entryType: 'RECHARGE', amount: '200000', occurredAt: '2026-09-01T10:00:00' }])
     }
@@ -287,7 +287,7 @@ test('服务端未发布 tokenAmount：按租户比例在前端换算（字段�
   expect(saas.formatPoints(points.balance)).toBe('12,680')
 
   // 租户配置全站只读一次（钱包 + 账本 + 显式读取共用同一份缓存）
-  const configCalls = fetch.mock.calls.filter(([url]) => String(url).includes('/admin/tenant/config'))
+  const configCalls = fetch.mock.calls.filter(([url]) => String(url).includes('/business/tenant/config'))
   expect(configCalls).toHaveLength(1)
   const config = await saas.getWalletTokenConfig()
   expect(config).toEqual({ brandName: '欢乐币', ratio: 10 })
@@ -296,7 +296,7 @@ test('服务端未发布 tokenAmount：按租户比例在前端换算（字段�
 test('服务端已发布 tokenAmount：以服务端值为准（前端不再自行换算）', async () => {
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 100 })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 100 })
     // 故意让前端换算结果（10000）与服务端值不同：必须取服务端值
     return jsonResponse({ availableAmount: '10000', frozenAmount: '0', tokenAmount: '777', tokenBrandName: 'A380币' })
   })
@@ -313,7 +313,7 @@ test('租户比例缺失/配置读不到：回退默认 100 且不报错（页�
   // 配置里没有 ratio（老租户配置）
   const missingRatio = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币' })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币' })
     return jsonResponse({ availableAmount: '10000', frozenAmount: '0' })
   })
   const first = await loadCEndSaas(missingRatio)
@@ -324,15 +324,15 @@ test('租户比例缺失/配置读不到：回退默认 100 且不报错（页�
   // 配置接口直接失败（服务端还没上线该接口）
   const failing = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return { ok: false, status: 500, text: async () => '{"code":"BOOM"}' }
+    if (target.includes('/business/tenant/config')) return { ok: false, status: 500, text: async () => '{"code":"BOOM"}' }
     return jsonResponse({ availableAmount: '10000', frozenAmount: '0' })
   })
   const second = await loadCEndSaas(failing)
   const walletB = await second.saas.getWallet()
   expect(walletB.tokenAmount).toBe('10000')
-  expect(walletB.tokenBrandName).toBe('A380币')
+  expect(walletB.tokenBrandName).toBe('OpenChat币')
   expect(second.warnings.join('\n')).toContain('租户储值配置不可读')
-  await expect(second.saas.getWalletTokenConfig()).resolves.toEqual({ brandName: 'A380币', ratio: 100 })
+  await expect(second.saas.getWalletTokenConfig()).resolves.toEqual({ brandName: 'OpenChat币', ratio: 100 })
 })
 
 test('demo 模式钱包 mock 也走数量口径（金额字段保留 + 数量由比例算出）', async () => {
@@ -341,7 +341,7 @@ test('demo 模式钱包 mock 也走数量口径（金额字段保留 + 数量由
   const wallet = await saas.getWallet()
   expect(wallet.availableAmount).toBe('888000')
   expect(wallet.tokenAmount).toBe('888000')
-  expect(wallet.tokenBrandName).toBe('A380币')
+  expect(wallet.tokenBrandName).toBe('OpenChat币')
   expect(saas.formatTokens(wallet.tokenAmount)).toBe('888,000')
   expect(saas.formatTokens(wallet.tokenAmount)).not.toMatch(CURRENCY_TRACE)
 

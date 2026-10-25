@@ -1,7 +1,6 @@
 /* 真实酒店：C 端目录/详情/报价/下单，数据来自 /business/hotel API。 */
 function hotelMoney(minor, currency) {
-  var amount = Number(minor || 0) / 100;
-  return (currency === 'CNY' ? '¥' : '') + amount.toFixed(2);
+  return window.A380Money ? window.A380Money.formatMoney(minor, currency) : '-';
 }
 
 async function hotelApi(path, options) {

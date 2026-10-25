@@ -277,7 +277,7 @@ test('回到前台（visibilitychange）：订单列表静默重取，金额与�
     const target = String(url)
     calls.push(target)
     if (target.includes(ORDERS_URL)) return json([current])
-    if (target.includes('/api/v1/admin/tenant/config')) return json({})
+    if (target.includes('/api/v1/business/tenant/config')) return json({})
     return json({})
   })
 
@@ -343,7 +343,7 @@ test('回到前台（visibilitychange）：钱包明细页静默重取余额与�
     calls.push(target)
     if (target.includes('/api/v1/me/wallet/ledger')) return json(ledger)
     if (target.includes('/api/v1/me/wallet')) return json(wallet)
-    if (target.includes('/api/v1/admin/tenant/config')) return json({})
+    if (target.includes('/api/v1/business/tenant/config')) return json({})
     return json({})
   })
 
