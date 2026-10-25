@@ -549,7 +549,11 @@ function bookingPickerTitle(name) {
 }
 
 function openBookingPicker(name) {
-  const form = document.querySelector('#ktv-order-form');
+  openBookingPickerFor('#ktv-order-form', name, bookingPickerTitle(name), bookingPickerOptions(name));
+}
+
+function openBookingPickerFor(formSelector, name, title, options) {
+  const form = document.querySelector(formSelector);
   const input = form && form.querySelector('[name="' + name + '"]');
   if (!input) return;
   let picker = document.querySelector('#booking-picker');
@@ -560,12 +564,12 @@ function openBookingPicker(name) {
     picker.innerHTML = '<section class="booking-picker-sheet" role="dialog" aria-modal="true"><div class="booking-picker-handle"></div><header><button type="button" data-picker-cancel>取消</button><h3></h3><button type="button" data-picker-confirm>确定</button></header><div class="booking-picker-options"></div></section>';
     document.body.appendChild(picker);
   }
-  const options = bookingPickerOptions(name);
   picker.hidden = false;
   picker.setAttribute('aria-hidden', 'false');
   picker.dataset.name = name;
+  picker.dataset.formSelector = formSelector;
   picker.dataset.value = input.value;
-  picker.querySelector('h3').textContent = bookingPickerTitle(name);
+  picker.querySelector('h3').textContent = title;
   picker.querySelector('.booking-picker-options').className = 'booking-picker-options picker-' + name;
   picker.querySelector('.booking-picker-options').innerHTML = options.map(function (option) {
     return '<button type="button" class="booking-picker-option' + (option.value === input.value ? ' active' : '') + '" data-picker-value="' + option.value + '" data-picker-label="' + escapeHtml(option.label) + '"><strong>' + escapeHtml(option.label) + '</strong>' + (option.hint ? '<small>' + escapeHtml(option.hint) + '</small>' : '') + '<i>✓</i></button>';
@@ -586,7 +590,7 @@ function closeBookingPicker() {
 
 function confirmBookingPicker() {
   const picker = document.querySelector('#booking-picker');
-  const form = document.querySelector('#ktv-order-form');
+  const form = document.querySelector(picker.dataset.formSelector || '#ktv-order-form');
   if (!picker || !form) return closeBookingPicker();
   const name = picker.dataset.name;
   const input = form.querySelector('[name="' + name + '"]');
@@ -599,6 +603,8 @@ function confirmBookingPicker() {
   }
   closeBookingPicker();
 }
+
+window.A380Picker = { open: openBookingPickerFor };
 
 // —— KTV 报价：与后台「按房型定价」同源（/business/ktv/pricing）。
 //    预约按**包厢类型**创建（具体包厢到店后由门店分配），所以房型列表 / 预约确认页 /

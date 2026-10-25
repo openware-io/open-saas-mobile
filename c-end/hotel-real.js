@@ -45,6 +45,31 @@ async function renderRealHotelList() {
   }
 }
 
+var hotelPickerOptions = {};
+
+function hotelPickerTitle(name) {
+  return { roomType: '选择房型', ratePlan: '选择价格计划', checkIn: '选择入住日期', checkOut: '选择退房日期', rooms: '选择房间数' }[name] || '请选择';
+}
+
+function hotelDateOptions(startOffset, count) {
+  var options = [];
+  for (var i = 0; i < count; i++) {
+    var offset = startOffset + i;
+    var value = dateOffset(offset);
+    options.push({ value: value, label: bookingDateLabel(value, offset), hint: value.replace(/-/g, '/') });
+  }
+  return options;
+}
+
+function hotelPickerField(id, label, value, display) {
+  return '<label>' + label +
+    '<input id="' + id + '" name="' + id + '" type="hidden" value="' + escapeHtml(String(value)) + '">' +
+    '<button type="button" class="booking-picker-row" data-hotel-picker="' + id + '">' +
+      '<span class="booking-field-copy"><strong data-picker-display="' + id + '">' + escapeHtml(display) + '</strong></span>' +
+      '<span class="booking-chevron">›</span>' +
+    '</button></label>';
+}
+
 async function renderRealHotelDetail(hotelId) {
   app.innerHTML = pageHead('酒店详情', '<span></span>') + '<section id="real-hotel-detail"><p class="empty">加载中…</p></section>';
   try {
@@ -54,21 +79,30 @@ async function renderRealHotelDetail(hotelId) {
     if (!root) return;
     var roomTypes = hotel.roomTypes || [];
     var ratePlans = hotel.ratePlans || [];
+    hotelPickerOptions.roomType = roomTypes.map(function (type) {
+      return { value: String(type.id), label: type.name + (type.areaSqm ? ' · ' + type.areaSqm + '㎡' : ''), hint: '' };
+    });
+    hotelPickerOptions.ratePlan = ratePlans.map(function (plan) {
+      return { value: String(plan.id), label: plan.name + ' · ' + hotelMoney(plan.basePriceMinor, plan.currency), hint: '' };
+    });
+    hotelPickerOptions.checkIn = hotelDateOptions(1, 14);
+    hotelPickerOptions.checkOut = hotelDateOptions(2, 14);
+    hotelPickerOptions.rooms = [1, 2, 3, 4, 5].map(function (n) {
+      return { value: String(n), label: n + ' 间', hint: '' };
+    });
     root.innerHTML =
       '<section class="detail-card merchant"><div class="hotel-detail-head"><div class="hotel-cover small">🏨</div><div><h2>' + escapeHtml(hotel.name) + '</h2>' +
       '<p>' + escapeHtml(hotel.address || '') + '</p></div></div>' +
       '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
       '<p>入住 ' + escapeHtml(hotel.checkInTime || '') + ' · 退房 ' + escapeHtml(hotel.checkOutTime || '') + '</p></section>' +
-      '<section class="form-card"><h2>选择房型与日期</h2>' +
-      '<label>房型<select id="hotel-room-type">' + roomTypes.map(function (type) {
-        return '<option value="' + type.id + '">' + escapeHtml(type.name) + ' · ' + (type.areaSqm || '') + '㎡</option>';
-      }).join('') + '</select></label>' +
-      '<label>价格计划<select id="hotel-rate-plan">' + ratePlans.map(function (plan) {
-        return '<option value="' + plan.id + '">' + escapeHtml(plan.name) + ' · ' + hotelMoney(plan.basePriceMinor, plan.currency) + '</option>';
-      }).join('') + '</select></label>' +
-      '<label>入住<input id="hotel-check-in" type="date" min="' + dateOffset(0) + '" value="' + dateOffset(1) + '"></label>' +
-      '<label>退房<input id="hotel-check-out" type="date" min="' + dateOffset(1) + '" value="' + dateOffset(2) + '"></label>' +
-      '<label>房间数<input id="hotel-rooms" type="number" min="1" max="5" value="1"></label>' +
+      '<section class="form-card" id="hotel-booking-form"><h2>选择房型与日期</h2>' +
+      '<label>房型<input id="hotel-room-type" name="hotel-room-type" type="hidden" value="' + (roomTypes[0] ? roomTypes[0].id : '') + '">' +
+      '<button type="button" class="booking-picker-row" data-hotel-picker="roomType"><span class="booking-field-copy"><strong data-picker-display="roomType">' + escapeHtml((roomTypes[0] && roomTypes[0].name) || '选择房型') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
+      '<label>价格计划<input id="hotel-rate-plan" name="hotel-rate-plan" type="hidden" value="' + (ratePlans[0] ? ratePlans[0].id : '') + '">' +
+      '<button type="button" class="booking-picker-row" data-hotel-picker="ratePlan"><span class="booking-field-copy"><strong data-picker-display="ratePlan">' + escapeHtml((ratePlans[0] && ratePlans[0].name) || '选择价格计划') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
+      hotelPickerField('hotel-check-in', '入住', dateOffset(1), bookingDateLabel(dateOffset(1), 1)) +
+      hotelPickerField('hotel-check-out', '退房', dateOffset(2), bookingDateLabel(dateOffset(2), 2)) +
+      hotelPickerField('hotel-rooms', '房间数', 1, '1 间') +
       '<button class="primary-button" data-hotel-quote>查询实时价格</button></section>' +
       '<section id="hotel-quote"></section>' +
       '<section class="form-card"><h2>入住人</h2>' +
@@ -152,6 +186,15 @@ async function renderRealHotelOrders() {
     if (list) list.innerHTML = emptyState('🏨', '订单加载失败', error.message || '请稍后重试');
   }
 }
+document.addEventListener('click', function (event) {
+  var button = event.target.closest('[data-hotel-picker]');
+  if (!button || !window.A380Picker) return;
+  event.preventDefault();
+  var name = button.getAttribute('data-hotel-picker');
+  var options = hotelPickerOptions[name] || [];
+  if (!options.length) return;
+  window.A380Picker.open('#hotel-booking-form', name, hotelPickerTitle(name), options);
+});
 document.addEventListener('click', async function (event) {
   var button = event.target.closest('[data-cancel-booking]');
   if (!button) return;
