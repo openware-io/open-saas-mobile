@@ -196,9 +196,10 @@ document.addEventListener('click', function (event) {
   if (!button || !window.A380Picker) return;
   event.preventDefault();
   var name = button.getAttribute('data-hotel-picker');
-  var options = hotelPickerOptions[name] || [];
+  var key = name === 'hotel-check-in' ? 'checkIn' : name === 'hotel-check-out' ? 'checkOut' : name === 'hotel-rooms' ? 'rooms' : name;
+  var options = hotelPickerOptions[key] || [];
   if (!options.length) return;
-  window.A380Picker.open('#hotel-booking-form', name, hotelPickerTitle(name), options);
+  window.A380Picker.open('#hotel-booking-form', name, hotelPickerTitle(key), options);
 });
 document.addEventListener('click', async function (event) {
   var button = event.target.closest('[data-cancel-booking]');
