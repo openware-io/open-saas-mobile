@@ -787,3 +787,38 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   font-size: 13px;
   font-weight: 600;
 }
+
+/* C 端独立登录页：不依赖 IM WebView，仍保留 App Bridge/IM 登录入口 */
+.login-mode .tab-bar { display: none !important; }
+.login-page {
+  min-height: 100vh;
+  padding: 48px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: radial-gradient(120% 70% at 50% 0%, #e9fbf5 0%, #f5f6f8 58%, #f5f6f8 100%);
+}
+.login-brand { display: flex; align-items: baseline; color: var(--primary-dark); font-weight: 800; }
+.login-brand span { font-size: 22px; letter-spacing: -.4px; }
+.login-brand small { margin-left: 8px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.login-page h1 { margin: 28px 0 8px; color: var(--text); font-size: 26px; letter-spacing: -.4px; }
+.login-lead { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+.login-form { display: grid; border-radius: 18px; background: #fff; padding: 18px; box-shadow: 0 8px 24px rgba(38, 48, 62, .07); }
+.login-form label { display: grid; margin-bottom: 14px; color: var(--text); font-size: 13px; font-weight: 600; }
+.login-form input {
+  min-height: 44px;
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+.login-form input:focus { border-color: var(--primary); }
+.login-form .primary-button { margin-top: 4px; }
+.login-error { min-height: 18px; margin: 0 0 4px; color: var(--danger); font-size: 12px; }
+.login-im-button { margin-top: 12px; }
+.login-foot { margin: 20px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+.compat-webview83 .login-page { background: #f5f6f8; }

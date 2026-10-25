@@ -1540,6 +1540,7 @@ function refreshOrderBill(orderId) {
 }
 
 function render() {
+  document.body.classList.remove('login-mode');
   const route = currentRoute();
   const parts = route.split('/');
   const showTabs = route === 'home' || route === 'my';
@@ -1817,6 +1818,51 @@ document.addEventListener('submit', async event => {
   }
 });
 
+function renderLogin() {
+  document.body.classList.add('login-mode');
+  app.innerHTML = '<section class="login-page">' +
+    '<div class="login-brand"><span>OpenChat</span><small>生活服务</small></div>' +
+    '<h1>登录 C 端</h1>' +
+    '<p class="login-lead">使用 SaaS 账号登录，或从 OpenChat 直接进入。</p>' +
+    '<form id="c-login-form" class="login-form">' +
+      '<label>手机号 / 登录账号<input name="identifier" autocomplete="username" required placeholder="请输入手机号或账号"></label>' +
+      '<label>密码<input name="password" type="password" autocomplete="current-password" required placeholder="请输入密码"></label>' +
+      '<p class="login-error" id="c-login-error" role="alert"></p>' +
+      '<button class="primary-button" type="submit">登录</button>' +
+    '</form>' +
+    '<button class="secondary-button login-im-button" type="button" id="c-login-im">使用 OpenChat 登录</button>' +
+    '<p class="login-foot">首次使用请先在 OpenChat 内完成手机号绑定。</p>' +
+  '</section>';
+  const form = document.querySelector('#c-login-form');
+  const errorBox = document.querySelector('#c-login-error');
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault();
+    const button = form.querySelector('button[type="submit"]');
+    const identifier = String(form.identifier.value || '').trim();
+    const password = String(form.password.value || '');
+    if (!identifier || !password) { errorBox.textContent = '请填写账号和密码'; return; }
+    errorBox.textContent = '';
+    button.disabled = true;
+    button.textContent = '登录中…';
+    try {
+      const loginType = identifier.indexOf('@') >= 0 ? 'EMAIL' : 'PHONE';
+      await window.A380OAuth.loginWithPassword(loginType, identifier, password);
+      document.body.classList.remove('login-mode');
+      await loadWalletTokenConfig();
+      booted = true;
+      render();
+    } catch (error) {
+      errorBox.textContent = window.A380AuthErrors && window.A380AuthErrors.describe
+        ? window.A380AuthErrors.describe(error).description : '登录失败，请检查账号或密码';
+      button.disabled = false;
+      button.textContent = '登录';
+    }
+  });
+  document.querySelector('#c-login-im').addEventListener('click', function () {
+    window.A380OAuth.startOAuth();
+  });
+}
+
 function renderAuthError(error) {
   const detail = window.A380AuthErrors ? window.A380AuthErrors.describe(error) : {
     title: '暂时无法进入服务', description: '网络或授权服务异常，请稍后重试。', retryable: true
@@ -1832,6 +1878,7 @@ function renderAuthError(error) {
       await window.A380OAuth.ensureAuth();
       render();
     } catch (nextError) {
+      if (nextError && nextError.code === 'LOGIN_REQUIRED') { renderLogin(); return; }
       renderAuthError(nextError);
     }
   });
@@ -1931,6 +1978,10 @@ setInterval(function () { refreshVisibleView(); }, REFRESH_INTERVAL_MS);
     booted = true;
     render();
   } catch (error) {
+    if (error && error.code === 'LOGIN_REQUIRED') {
+      renderLogin();
+      return;
+    }
     renderAuthError(error);
   }
 })();

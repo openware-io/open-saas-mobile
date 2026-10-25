@@ -271,6 +271,27 @@
     return oauthError('IM_BRIDGE_AUTH_FAILED', 'IM bridge authorization failed');
   }
 
+  /**
+   * SaaS C 端独立登录：手机号/邮箱 + 密码。
+   * 先换 identity access token，再用该 token 建立绑定 appId 的 C 会话。
+   */
+  async function loginWithPassword(loginType, loginIdentifier, credential) {
+    var login = await req('/api/v1/identity/login', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loginType: loginType, loginIdentifier: loginIdentifier, credential: credential }),
+    });
+    if (!login || !login.accessToken) throw oauthError('LOGIN_FAILED', '登录失败');
+    var session = await req('/api/v1/auth/session?appId=' + APP_ID, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Authorization': 'Bearer ' + login.accessToken },
+    });
+    if (!session || !session.authenticated) throw oauthError('LOGIN_FAILED', '登录失败');
+    clearCsrfToken();
+    await selectContext();
+    activateLive();
+    return session;
+  }
+
   async function ensureAuth() {
     if (isUiPreview()) {
       window.SAAS_DEMO_MODE = true;
@@ -309,7 +330,8 @@
       return;
     }
 
-    // 回退：非 IM App 环境（如浏览器）走 URL 重定向授权
+    // 非 IM App 环境不自动裸跳 /oauth/authorize（拿不到 IM JWT，只会 401）。
+    // 有授权码先完成回调；否则交给 C 端登录页。
     var code = takeCode();
     if (code) {
       try {
@@ -321,11 +343,11 @@
       } catch (e) {
         if (e && (e.code === 'NO_CONSUMER_ACCESS' || e.code === 'CONTEXT_SELECTION_REQUIRED'
             || e.code === 'IAM_CONTEXT_UNAVAILABLE')) throw e;
-        await startOAuth();
+        throw oauthError('LOGIN_REQUIRED', '请登录 C 端账号');
       }
       return;
     }
-    await startOAuth();
+    throw oauthError('LOGIN_REQUIRED', '请登录 C 端账号');
   }
 
   async function refreshContext() {
@@ -340,5 +362,6 @@
   window.A380OAuth = {
     APP_ID: APP_ID, REDIRECT_URI: REDIRECT_URI,
     ready: ready, startOAuth: startOAuth, ensureAuth: ensureAuth, refreshContext: refreshContext,
+    loginWithPassword: loginWithPassword,
   };
 })();
