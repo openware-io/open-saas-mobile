@@ -1852,8 +1852,14 @@ function renderLogin() {
       booted = true;
       render();
     } catch (error) {
-      errorBox.textContent = window.A380AuthErrors && window.A380AuthErrors.describe
-        ? window.A380AuthErrors.describe(error).description : '登录失败，请检查账号或密码';
+      if (error && (error.status === 401 || error.code === 'AUTH_INVALID_CREDENTIAL' || error.code === 'LOGIN_FAILED')) {
+        errorBox.textContent = '账号或密码错误，请重试';
+      } else if (error && (error.code === 'MEMBERSHIP_INACTIVE' || error.code === 'NO_CONSUMER_ACCESS'
+          || error.code === 'CUSTOMER_NOT_BOUND' || error.code === 'IAM_CONTEXT_UNAVAILABLE')) {
+        errorBox.textContent = '该账号还没有 C 端客户身份，请联系门店或在 OpenChat 完成绑定';
+      } else {
+        errorBox.textContent = '登录失败，请检查网络后重试';
+      }
       button.disabled = false;
       button.textContent = '登录';
     }
