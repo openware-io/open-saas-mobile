@@ -18,30 +18,47 @@ async function hotelApi(path, options) {
   return payload;
 }
 
+var hotelListCache = [];
+
+function hotelCards(hotels) {
+  return hotels.map(function (hotel) {
+    return '<article class="venue-card" data-real-hotel="' + hotel.id + '">' +
+      '<div class="hotel-cover">🏨</div>' +
+      '<div class="venue-copy"><h3>' + escapeHtml(hotel.name) + '</h3>' +
+      '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
+      '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
+      '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
+      '<p><span class="hotel-link">查看房型</span></p></div></article>';
+  }).join('');
+}
+
 async function renderRealHotelList() {
-  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-orders">订单</button>') +
+  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-hotel-orders">订单</button>') +
     '<section class="list" id="real-hotel-list"><p class="empty">酒店加载中…</p></section>';
+  var list = document.querySelector('#real-hotel-list');
+  if (list && hotelListCache.length) list.innerHTML = hotelCards(hotelListCache);
   try {
     var hotels = await hotelApi('/business/hotel/catalog/hotels');
     if (!routeIsCurrent('service/hotel')) return;
-    var list = document.querySelector('#real-hotel-list');
+    list = document.querySelector('#real-hotel-list');
     if (!list) return;
     if (!hotels || !hotels.length) {
+      hotelListCache = [];
       list.innerHTML = emptyState('🏨', '暂无可预订酒店', '酒店正在准备房态，请稍后再来');
       return;
     }
-    list.innerHTML = hotels.map(function (hotel) {
-      return '<article class="venue-card" data-real-hotel="' + hotel.id + '">' +
-        '<div class="hotel-cover">🏨</div>' +
-        '<div class="venue-copy"><h3>' + escapeHtml(hotel.name) + '</h3>' +
-        '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
-        '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
-        '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
-        '<p><span class="hotel-link">查看房型</span></p></div></article>';
-    }).join('');
+    hotelListCache = hotels;
+    list.innerHTML = hotelCards(hotels);
   } catch (error) {
-    var list = document.querySelector('#real-hotel-list');
-    if (list) list.innerHTML = emptyState('🏨', '酒店加载失败', error.message || '请稍后重试');
+    list = document.querySelector('#real-hotel-list');
+    if (!list) return;
+    if (hotelListCache.length) {
+      list.innerHTML = hotelCards(hotelListCache);
+      showToast('网络不稳定，已显示上次结果');
+      return;
+    }
+    list.innerHTML = emptyState('🏨', '酒店加载失败', error.message || '请稍后重试') +
+      '<button class="retry-button" type="button" data-retry="service/hotel">重新加载</button>';
   }
 }
 
@@ -179,12 +196,24 @@ async function renderRealHotelOrders() {
       list.innerHTML = emptyState('🏨', '暂无酒店订单', '去酒店页选择房型并提交预订');
       return;
     }
+    var statusLabels = {
+      PENDING_PAYMENT: ['待支付', 'pending'],
+      CONFIRMED: ['已确认', 'confirmed'],
+      CANCELLED: ['已取消', 'cancelled'],
+      COMPLETED: ['已完成', 'completed'],
+      NO_SHOW: ['未到店', 'no-show']
+    };
     list.innerHTML = orders.map(function (order) {
-      return '<article class="venue-card"><div class="venue-copy"><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
-        '<p>' + escapeHtml(order.roomType || '') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p>' +
-        '<p>' + escapeHtml(order.checkInDate) + ' ~ ' + escapeHtml(order.checkOutDate) + '</p>' +
-        '<div class="tag-row"><span>' + escapeHtml(order.status) + '</span></div>' +
-        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span></p></div>' + (order.status === 'PENDING_PAYMENT' ? '<button class="ghost-button" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') + '</article>';
+      var status = statusLabels[order.status] || [order.status, 'default'];
+      return '<article class="hotel-order-card">' +
+        '<header class="hotel-order-head"><div><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
+          '<p>' + escapeHtml(order.roomType || '房型待确认') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p></div>' +
+          '<span class="hotel-order-status is-' + status[1] + '">' + escapeHtml(status[0]) + '</span></header>' +
+        '<div class="hotel-order-dates"><div><small>入住</small><strong>' + escapeHtml(order.checkInDate) + '</strong></div>' +
+          '<div><small>退房</small><strong>' + escapeHtml(order.checkOutDate) + '</strong></div></div>' +
+        '<footer class="hotel-order-foot"><span class="hotel-order-price">' + hotelMoney(order.amountMinor, order.currency) + '</span>' +
+          (order.status === 'PENDING_PAYMENT' ? '<button class="hotel-order-cancel" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') +
+        '</footer></article>';
     }).join('');
   } catch (error) {
     var list = document.querySelector('#real-hotel-orders');

@@ -687,3 +687,103 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
+/* 酒店订单卡片：独立于场馆双列卡片，避免取消按钮被挤成整块灰框 */
+.hotel-order-card {
+  display: grid;
+  gap: 12px;
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(38, 48, 62, .06);
+}
+.hotel-order-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hotel-order-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  word-break: break-all;
+}
+.hotel-order-head p {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.hotel-order-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hotel-order-status.is-pending { color: #b87408; background: #fff6e5; }
+.hotel-order-status.is-confirmed { color: #07845c; background: #e9fbf5; }
+.hotel-order-status.is-cancelled { color: #737d89; background: #f2f4f6; }
+.hotel-order-status.is-completed { color: #2874bf; background: #eff7ff; }
+.hotel-order-status.is-no-show { color: #b84b4b; background: #fff1f1; }
+.hotel-order-status.is-default { color: #737d89; background: #f2f4f6; }
+.hotel-order-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 11px 0;
+}
+.hotel-order-dates small {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hotel-order-dates strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.hotel-order-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hotel-order-price {
+  color: var(--danger);
+  font-size: 18px;
+  font-weight: 800;
+}
+.hotel-order-cancel {
+  min-height: 36px;
+  border: 1px solid rgba(217, 72, 72, .32);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--danger);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.hotel-order-cancel:active {
+  background: #fff4f4;
+}
+.retry-button {
+  display: block;
+  margin: 12px auto 0;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--primary-dark);
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 600;
+}

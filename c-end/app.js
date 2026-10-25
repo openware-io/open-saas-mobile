@@ -1854,6 +1854,12 @@ function renderAuthError(error) {
 }
 
 window.addEventListener('hashchange', render);
+// WebView 从 bfcache 恢复时 hashchange 不会再触发；酒店相关页面主动重渲染，避免停在旧错误态。
+window.addEventListener('pageshow', function (event) {
+  if (!event.persisted) return;
+  var route = location.hash.replace(/^#\/?/, '');
+  if (route === 'service/hotel' || route === 'my-hotel-orders' || route.indexOf('real-hotel/') === 0) render();
+});
 window.addEventListener('saas-activated', render);
 // 币种落地/切换（context select 响应或 X-Currency 兜底）后整页重渲染：全站金额符号统一变化。
 // 首屏渲染前不抢跑，避免页面先闪一次「品牌名未取到」的中间态（boot 收尾那次渲染已用上新币种）。
