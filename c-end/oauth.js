@@ -314,8 +314,8 @@
       }
     }
 
-    // 首选：App 原生桥出授权码
-    try { await authorizeViaBridge(); }
+    // 首选：App 原生桥出授权码；非 App 环境不要白等 6 秒，直接显示独立登录页。
+    try { if (hasNativeBridge()) await authorizeViaBridge(); }
     catch (e) {
       // App 容器已提供桥时，裸跳 /oauth/authorize 不会携带 IM JWT，
       // 只能得到网关的 401 JSON。保留错误给页面展示并让用户重新登录 IM。
