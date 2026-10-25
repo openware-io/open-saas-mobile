@@ -102,9 +102,9 @@ async function renderRealHotelDetail(hotelId) {
       '<p>入住 ' + escapeHtml(hotel.checkInTime || '') + ' · 退房 ' + escapeHtml(hotel.checkOutTime || '') + '</p></section>' +
       '<section class="form-card" id="hotel-booking-form"><h2>选择房型与日期</h2>' +
       '<label>房型<input id="hotel-room-type" name="hotel-room-type" type="hidden" value="' + (roomTypes[0] ? roomTypes[0].id : '') + '">' +
-      '<button type="button" class="booking-picker-row" data-hotel-picker="roomType"><span class="booking-field-copy"><strong data-picker-display="roomType">' + escapeHtml((roomTypes[0] && roomTypes[0].name) || '选择房型') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
+      '<button type="button" class="booking-picker-row" data-hotel-picker="roomType"><span class="booking-field-copy"><strong data-picker-display="roomType">' + escapeHtml(roomTypes[0] ? roomTypes[0].name + (roomTypes[0].areaSqm ? ' · ' + roomTypes[0].areaSqm + '㎡' : '') : '选择房型') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
       '<label>价格计划<input id="hotel-rate-plan" name="hotel-rate-plan" type="hidden" value="' + (ratePlans[0] ? ratePlans[0].id : '') + '">' +
-      '<button type="button" class="booking-picker-row" data-hotel-picker="ratePlan"><span class="booking-field-copy"><strong data-picker-display="ratePlan">' + escapeHtml((ratePlans[0] && ratePlans[0].name) || '选择价格计划') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
+      '<button type="button" class="booking-picker-row" data-hotel-picker="ratePlan"><span class="booking-field-copy"><strong data-picker-display="ratePlan">' + escapeHtml(ratePlans[0] ? ratePlans[0].name + ' · ' + hotelMoney(ratePlans[0].basePriceMinor, ratePlans[0].currency) : '选择价格计划') + '</strong></span><span class="booking-chevron">›</span></button></label>' +
       hotelPickerField('hotel-check-in', '入住', dateOffset(1), hotelDateShort(dateOffset(1), 1)) +
       hotelPickerField('hotel-check-out', '退房', dateOffset(2), hotelDateShort(dateOffset(2), 2)) +
       hotelPickerField('hotel-rooms', '房间数', 1, '1 间') +
