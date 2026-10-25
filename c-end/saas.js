@@ -368,7 +368,7 @@
   function ensureWalletTokenConfig() {
     if (!walletTokenConfigRequest) {
       var loading = live
-        ? request('GET', '/api/v1/admin/tenant/config').then(function (data) {
+        ? request('GET', '/api/v1/business/tenant/config').then(function (data) {
             return normalizeWalletTokenConfig(unwrap(data));
           })
         : Promise.resolve(defaultWalletTokenConfig());

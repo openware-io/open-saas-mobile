@@ -585,3 +585,10 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .modal-btn.ghost { border: 1px solid var(--line); background: #fff; color: var(--text); }
 .modal-btn.danger { border: 1px solid var(--danger); background: var(--danger); color: #fff; }
 
+
+/* 酒店业务沿用 KTV 的卡片/标签视觉语言 */
+.hotel-cover { display: grid; min-height: 126px; place-items: center; color: var(--primary-dark); background: linear-gradient(135deg,#e9fbf5,#d6f4ea); font-size: 38px; }
+.hotel-cover.small { width: 72px; min-height: 72px; border-radius: 16px; font-size: 26px; }
+.hotel-detail-head { display: flex; gap: 12px; align-items: center; }
+.hotel-detail-head h2 { margin: 0; }
+.hotel-detail-head p { margin: 4px 0 0; }

@@ -33,10 +33,12 @@ async function renderRealHotelList() {
     }
     list.innerHTML = hotels.map(function (hotel) {
       return '<article class="venue-card" data-real-hotel="' + hotel.id + '">' +
+        '<div class="hotel-cover">🏨</div>' +
         '<div class="venue-copy"><h3>' + escapeHtml(hotel.name) + '</h3>' +
         '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
         '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
-        '<p><span class="price">实时报价</span></p></div></article>';
+        '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
+        '<p><span class="price">查看房型</span></p></div></article>';
     }).join('');
   } catch (error) {
     var list = document.querySelector('#real-hotel-list');
@@ -54,8 +56,9 @@ async function renderRealHotelDetail(hotelId) {
     var roomTypes = hotel.roomTypes || [];
     var ratePlans = hotel.ratePlans || [];
     root.innerHTML =
-      '<section class="detail-card merchant"><h2>' + escapeHtml(hotel.name) + '</h2>' +
-      '<p>' + escapeHtml(hotel.address || '') + '</p>' +
+      '<section class="detail-card merchant"><div class="hotel-detail-head"><div class="hotel-cover small">🏨</div><div><h2>' + escapeHtml(hotel.name) + '</h2>' +
+      '<p>' + escapeHtml(hotel.address || '') + '</p></div></div>' +
+      '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
       '<p>入住 ' + escapeHtml(hotel.checkInTime || '') + ' · 退房 ' + escapeHtml(hotel.checkOutTime || '') + '</p></section>' +
       '<section class="form-card"><h2>选择房型与日期</h2>' +
       '<label>房型<select id="hotel-room-type">' + roomTypes.map(function (type) {
@@ -142,7 +145,8 @@ async function renderRealHotelOrders() {
       return '<article class="venue-card"><div class="venue-copy"><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
         '<p>' + escapeHtml(order.roomType || '') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p>' +
         '<p>' + escapeHtml(order.checkInDate) + ' ~ ' + escapeHtml(order.checkOutDate) + '</p>' +
-        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span> · ' + escapeHtml(order.status) + '</p></div>' + (order.status === 'PENDING_PAYMENT' ? '<button class="ghost-button" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') + '</article>';
+        '<div class="tag-row"><span>' + escapeHtml(order.status) + '</span></div>' +
+        '<p><span class="price">' + hotelMoney(order.amountMinor, order.currency) + '</span></p></div>' + (order.status === 'PENDING_PAYMENT' ? '<button class="ghost-button" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') + '</article>';
     }).join('');
   } catch (error) {
     var list = document.querySelector('#real-hotel-orders');
