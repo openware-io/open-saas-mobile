@@ -21,7 +21,7 @@
     </div>
 
     <div v-else class="card-list">
-      <article v-for="task in tasks" :key="task.id" class="card reservation-card">
+      <article v-for="task in tasks" :key="task.id" class="card reservation-card hotel-card">
         <div class="reservation-body">
           <header class="reservation-head">
             <div>
@@ -110,3 +110,19 @@ async function checkOut(task) {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.hotel-view .hotel-card {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+}
+.hotel-view .hotel-card .reservation-head h2 {
+  font-size: 15px;
+}
+.hotel-view .hotel-card .reservation-head p {
+  font-size: 10px;
+}
+.hotel-view .hotel-card .reservation-info strong {
+  font-size: 13px;
+}
+</style>
