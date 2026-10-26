@@ -217,6 +217,7 @@ async function renderRealHotelOrders() {
     }
     var statusLabels = {
       PENDING_PAYMENT: ['待支付', 'pending'],
+      PENDING_DEPOSIT: ['待付定金', 'pending'],
       CONFIRMED: ['已确认', 'confirmed'],
       CANCELLED: ['已取消', 'cancelled'],
       COMPLETED: ['已完成', 'completed'],
