@@ -132,7 +132,7 @@ async function renderRealHotelDetail(hotelId) {
       return { value: String(n), label: n + ' 间', hint: '' };
     });
     root.innerHTML =
-      '<section class="detail-card merchant"><div class="hotel-detail-head"><div class="hotel-cover small">🏨</div><div><h2>' + escapeHtml(hotel.name) + '</h2>' +
+      '<section class="detail-card merchant"><div class="hotel-detail-head">'<img class="hotel-cover-img small" src="' + escapeHtml(hotel.coverImageUrl || './assets/hotel-cover.svg') + '" alt="' + escapeHtml(hotel.name) + ' 封面">'<div><h2>' + escapeHtml(hotel.name) + '</h2>' +
       '<p>' + escapeHtml(hotel.address || '') + '</p></div></div>' +
       '<div class="tag-row"><span>即时确认</span><span>到店付</span><span>免费取消</span></div>' +
       '<p>入住 ' + escapeHtml(hotel.checkInTime || '') + ' · 退房 ' + escapeHtml(hotel.checkOutTime || '') + '</p></section>' +
