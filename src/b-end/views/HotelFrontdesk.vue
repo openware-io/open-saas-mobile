@@ -73,7 +73,7 @@ function statusTone(status) {
   return 'neutral'
 }
 function canCheckIn(task) { return ['CONFIRMED', 'ARRIVAL'].includes(task.status) }
-function canCheckOut(task) { return ['IN_HOUSE', 'DUE_OUT'].includes(task.status) }
+function canCheckOut(task) { return task.hasStay !== false && ['IN_HOUSE', 'DUE_OUT'].includes(task.status) }
 
 function unwrap(data) { return Array.isArray(data) ? data : (data?.items || []) }
 function reasonOf(e) { return e?.friendlyMessage || e?.message || '操作失败' }
