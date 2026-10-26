@@ -22,7 +22,7 @@ import {
 } from './src/shared/utils/money'
 
 /**
- * 储值币（A380币）/ 积分展示契约：
+ * 储值币（OpenChat币）/ 积分展示契约：
  *
  * **储值币与积分不是货币**——它们只是组合支付里的一种支付工具（储值币 / 营销币）：
  *  1) 界面只显示**数量**，**不得出现货币符号或币种**（只有现金与价格才带货币单位，现金默认 USD）；
@@ -94,7 +94,7 @@ async function loadCEndSaasDemo() {
 /** 代币/积分展示文本里**绝不允许**出现的货币痕迹。 */
 const CURRENCY_TRACE = /[¥￥$€]|\bCNY\b|\bUSD\b|\bRMB\b|元/
 /** 代币/积分展示文本里**绝不允许**出现的单位（品牌名 / 「积分」/「个」）。 */
-const UNIT_TRACE = /欢乐币|A380币|储值币|积分|个/
+const UNIT_TRACE = /欢乐币|OpenChat币|储值币|积分|个/
 
 // —— 1. formatTokens / formatPoints：数量口径、千分位、无货币符号、无单位 ——
 
@@ -298,14 +298,14 @@ test('服务端已发布 tokenAmount：以服务端值为准（前端不再自�
     const target = String(url)
     if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 100 })
     // 故意让前端换算结果（10000）与服务端值不同：必须取服务端值
-    return jsonResponse({ availableAmount: '10000', frozenAmount: '0', tokenAmount: '777', tokenBrandName: 'A380币' })
+    return jsonResponse({ availableAmount: '10000', frozenAmount: '0', tokenAmount: '777', tokenBrandName: 'OpenChat币' })
   })
   const { saas } = await loadCEndSaas(fetch)
 
   const wallet = await saas.getWallet()
   expect(wallet.tokenAmount).toBe('777')
   expect(wallet.tokenAmount).not.toBe('10000')
-  expect(wallet.tokenBrandName).toBe('A380币')
+  expect(wallet.tokenBrandName).toBe('OpenChat币')
   expect(saas.formatTokens(wallet.tokenAmount)).toBe('777')
 })
 
