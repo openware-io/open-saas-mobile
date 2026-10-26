@@ -2,7 +2,7 @@
  * C 端（SaaS 生活服务）OAuth 客户端：标准接入流程（PKCE + 授权码 + 服务端会话 + 上下文选择）。
  * 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> POST /identity/oauth/im/callback（服务端换 token+绑定）
  *        -> GET /auth/contexts -> POST /auth/context/select -> 激活同源 Cookie 会话。
- * 不改 open-chat-app：入口由 IM 后台「服务板块」登记服务项(link 指向 /a380/)，跳转+授权走 IM 开放平台。
+ * 不改 open-chat-app：入口由 IM 后台「服务板块」登记服务项(link 指向 /saas/)，跳转+授权走 IM 开放平台。
  * C 端为消费者身份，不做运营角色校验（B 端 /b/ 才校验 B_OPERATOR_ROLES）。
  */
 (function () {
@@ -142,7 +142,7 @@
       return true;
     } catch (e) {
       // 服务端未开启调试放权（生产/未配置）时必须静默回退正常 OAuth，不能因此中断进入流程。
-      console.warn('[a380-oauth] dev session unavailable, fallback to oauth:', e && e.message);
+      console.warn('[saas-oauth] dev session unavailable, fallback to oauth:', e && e.message);
       return false;
     }
   }
@@ -197,8 +197,8 @@
    * 响应体不带该字段时用网关 X-Currency 头兜底（money.js 内部落地并触发页面重渲染）。
    */
   function applyCurrency(payload, response) {
-    if (window.A380Money && typeof window.A380Money.applyResponseCurrency === 'function') {
-      window.A380Money.applyResponseCurrency(payload, response);
+    if (window.SaasMoney && typeof window.SaasMoney.applyResponseCurrency === 'function') {
+      window.SaasMoney.applyResponseCurrency(payload, response);
     }
   }
 
@@ -210,7 +210,7 @@
         var suffix = attempt === 0 ? '' : '&refresh=' + Date.now();
         var ctx = await get('/api/v1/auth/contexts?appId=' + APP_ID + suffix);
         var list = Array.isArray(ctx) ? ctx : (ctx && ctx.items) || [];
-        var first = window.A380Context && window.A380Context.chooseSingle(list);
+        var first = window.SaasContext && window.SaasContext.chooseSingle(list);
         if (!first) {
           var noContext = new Error(list.length > 1 ? 'CONTEXT_SELECTION_REQUIRED' : 'NO_CONSUMER_ACCESS');
           noContext.code = list.length > 1 ? 'CONTEXT_SELECTION_REQUIRED' : 'NO_CONSUMER_ACCESS';
@@ -320,7 +320,7 @@
       // App 容器已提供桥时，裸跳 /oauth/authorize 不会携带 IM JWT，
       // 只能得到网关的 401 JSON。保留错误给页面展示并让用户重新登录 IM。
       if (hasNativeBridge()) throw nativeBridgeAuthorizationError(e);
-      console.warn('[a380-oauth] bridge unavailable, fallback redirect:', e && e.message);
+      console.warn('[saas-oauth] bridge unavailable, fallback redirect:', e && e.message);
     }
 
     session = await getSession();
@@ -359,7 +359,7 @@
 
   var ready = ensureAuth();
 
-  window.A380OAuth = {
+  window.SaasOAuth = {
     APP_ID: APP_ID, REDIRECT_URI: REDIRECT_URI,
     ready: ready, startOAuth: startOAuth, ensureAuth: ensureAuth, refreshContext: refreshContext,
     loginWithPassword: loginWithPassword,

@@ -1,4 +1,4 @@
-window.A380_DATA = {
+window.Saas_DATA = {
   services: [
     { id: 'hotel', name: '酒店', icon: '🏨', kind: 'venue' },
     { id: 'ktv', name: 'KTV 业务', icon: '🎤', kind: 'business' },
@@ -17,8 +17,8 @@ window.A380_DATA = {
       // tokenAmount 是代币个数 = balance ÷ 100 × 租户比例（默认 100）；展示走 SAAS.formatTokens，不带货币符号。
       title: 'SaaS 币', balance: 888000, tokenAmount: 888000,
       records: [
-        ['充值到账', '+2,000', '今天 09:26'], ['OpenChat酒店消费', '-368', '昨天 21:08'],
-        ['活动奖励', '+188', '08月25日 18:30'], ['OpenChat KTV消费', '-298', '08月23日 22:15'],
+        ['充值到账', '+2,000', '今天 09:26'], ['SaaS酒店消费', '-368', '昨天 21:08'],
+        ['活动奖励', '+188', '08月25日 18:30'], ['SaaS KTV消费', '-298', '08月23日 22:15'],
       ],
     },
     points: {
@@ -32,8 +32,8 @@ window.A380_DATA = {
   venues: {
     hotel: {
       title: '酒店', noun: '酒店', search: '搜索酒店、商圈或地标', images: ['hotel-1.jpg','hotel-2.jpg','hotel-3.jpg','hotel-4.jpg'],
-      names: ['OpenChat酒店中心店', 'OpenChat酒店机场店', 'OpenChat酒店会展店', 'OpenChat酒店滨江店'],
-      tags: ['近地铁', '免费早餐', '延迟退房'], address: '深圳市南山区科技南一路 OpenChat 服务中心',
+      names: ['SaaS酒店中心店', 'SaaS酒店机场店', 'SaaS酒店会展店', 'SaaS酒店滨江店'],
+      tags: ['近地铁', '免费早餐', '延迟退房'], address: '深圳市南山区科技南一路 SaaS 服务中心',
       packages: [
         { name: '豪华大床房', desc: '1张1.8米大床 · 2份早餐 · 35㎡', price: 368, stock: 8 },
         { name: '景观双床房', desc: '2张1.2米单床 · 高层景观 · 38㎡', price: 428, stock: 5 },
@@ -43,8 +43,8 @@ window.A380_DATA = {
     },
     ktv: {
       title: 'KTV', noun: 'KTV', search: '搜索KTV、商圈或套餐', images: ['ktv-1.png','ktv-2.png','ktv-3.png','ktv-4.png'],
-      names: ['OpenChat KTV壹号店', 'OpenChat KTV欢乐店', 'OpenChat KTV星光店', 'OpenChat KTV派对店'],
-      tags: ['音响升级', '免费停车', '可订包厢'], address: '深圳市福田区星河路 OpenChat 娱乐广场',
+      names: ['SaaS KTV壹号店', 'SaaS KTV欢乐店', 'SaaS KTV星光店', 'SaaS KTV派对店'],
+      tags: ['音响升级', '免费停车', '可订包厢'], address: '深圳市福田区星河路 SaaS 娱乐广场',
       packages: [
         { name: '小包欢唱套餐', desc: '4小时欢唱 · 果盘1份 · 软饮6瓶', price: 298, stock: 6 },
         { name: '中包聚会套餐', desc: '4小时欢唱 · 啤酒12瓶 · 小吃2份', price: 498, stock: 4 },
@@ -54,8 +54,8 @@ window.A380_DATA = {
     },
     bar: {
       title: '酒吧', noun: '酒吧', search: '搜索酒吧、商圈或套餐', images: ['bar-1.jpg','bar-2.jpg','bar-3.jpg','bar-4.jpg','bar-5.jpg','bar-6.jpg'],
-      names: ['OpenChat酒吧中心店', 'OpenChat酒吧海岸店', 'OpenChat酒吧云端店', 'OpenChat酒吧音乐店'],
-      tags: ['现场音乐', '散台可订', '卡座套餐'], address: '深圳市南山区海德三道 OpenChat 潮流街区',
+      names: ['SaaS酒吧中心店', 'SaaS酒吧海岸店', 'SaaS酒吧云端店', 'SaaS酒吧音乐店'],
+      tags: ['现场音乐', '散台可订', '卡座套餐'], address: '深圳市南山区海德三道 SaaS 潮流街区',
       packages: [
         { name: '散台畅饮套餐', desc: '散台1桌 · 精酿4杯 · 小吃1份', price: 268, stock: 10 },
         { name: '卡座欢聚套餐', desc: '卡座1桌 · 啤酒18瓶 · 果盘2份', price: 688, stock: 5 },
@@ -65,8 +65,8 @@ window.A380_DATA = {
     },
     billiards: {
       title: '台球厅', noun: '台球厅', search: '搜索台球厅、球台或商圈', images: ['billiards-1.png','billiards-2.png','billiards-3.png'],
-      names: ['OpenChat台球厅中心店', 'OpenChat台球厅竞技店', 'OpenChat台球厅星牌店', 'OpenChat台球厅欢乐店'],
-      tags: ['专业球台', '免费停车', '饮品供应'], address: '深圳市罗湖区人民南路 OpenChat 运动中心',
+      names: ['SaaS台球厅中心店', 'SaaS台球厅竞技店', 'SaaS台球厅星牌店', 'SaaS台球厅欢乐店'],
+      tags: ['专业球台', '免费停车', '饮品供应'], address: '深圳市罗湖区人民南路 SaaS 运动中心',
       packages: [
         { name: '标准球台2小时', desc: '美式球台 · 含球杆2支 · 饮品2杯', price: 108, stock: 9 },
         { name: '精品球台3小时', desc: '星牌球台 · 专属灯光 · 饮品4杯', price: 188, stock: 5 },
@@ -76,8 +76,8 @@ window.A380_DATA = {
     },
     foot: {
       title: '足浴按摩', noun: '足浴', search: '搜索足浴、按摩或商圈', images: ['foot-1.png','foot-2.png','foot-3.png','foot-4.png'],
-      names: ['OpenChat足浴中心店', 'OpenChat足浴养生店', 'OpenChat足浴滨河店', 'OpenChat足浴静享店'],
-      tags: ['专业技师', '安静包厢', '到店即用'], address: '深圳市宝安区创业一路 OpenChat 健康生活馆',
+      names: ['SaaS足浴中心店', 'SaaS足浴养生店', 'SaaS足浴滨河店', 'SaaS足浴静享店'],
+      tags: ['专业技师', '安静包厢', '到店即用'], address: '深圳市宝安区创业一路 SaaS 健康生活馆',
       packages: [
         { name: '经典足浴70分钟', desc: '草本泡足 · 足底舒缓 · 肩颈放松', price: 128, stock: 12 },
         { name: '泰式舒缓90分钟', desc: '泰式拉伸 · 全身舒缓 · 热敷', price: 198, stock: 8 },
@@ -90,8 +90,8 @@ window.A380_DATA = {
     food: {
       title: '美食', action: '立即预约', tags: ['推荐', '双人餐', '下午茶', '夜宵'],
       items: [
-        ['OpenChat臻选双人餐', '主厨热菜4道 · 小吃2份 · 饮品2杯', 168, 'food-1.png', 1286],
-        ['OpenChat下午茶套餐', '甜品拼盘 · 手作饮品2杯', 88, 'food-2.png', 956],
+        ['SaaS臻选双人餐', '主厨热菜4道 · 小吃2份 · 饮品2杯', 168, 'food-1.png', 1286],
+        ['SaaS下午茶套餐', '甜品拼盘 · 手作饮品2杯', 88, 'food-2.png', 956],
         ['炙烤牛排单人餐', '谷饲牛排 · 沙拉 · 例汤', 98, 'food-3.png', 731],
         ['城市夜宵分享餐', '烧烤拼盘 · 精酿4杯', 138, 'food-4.png', 528],
       ],

@@ -43,12 +43,12 @@ function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 }
 
-/** 只加载 c-end/money.js（window.A380Money），断言 C 端口径。 */
+/** 只加载 c-end/money.js（window.SaasMoney），断言 C 端口径。 */
 async function loadCEndMoney() {
   const source = await readRepo('c-end/money.js')
   const window = { console: { warn: () => {}, log: () => {}, error: () => {} }, sessionStorage: null }
   vm.runInNewContext(source, { window, console: window.console })
-  return window.A380Money
+  return window.SaasMoney
 }
 
 function jsonResponse(data) {
@@ -62,7 +62,7 @@ async function loadCEndSaas(fetch) {
   const fakeConsole = { warn: (message) => warnings.push(String(message)), log: () => {}, error: () => {} }
   const window = {
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
   }
   const context = { window, fetch, console: fakeConsole, crypto: { randomUUID: () => 'request-id' } }
   vm.runInNewContext(moneySource, context)
@@ -76,7 +76,7 @@ async function loadCEndSaasDemo() {
   const [moneySource, source] = await Promise.all([readRepo('c-end/money.js'), readRepo('c-end/saas.js')])
   const window = {
     location: { origin: 'http://localhost:5175', hostname: 'localhost', port: '5175', search: '?preview=1' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const context = {

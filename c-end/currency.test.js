@@ -23,7 +23,7 @@ async function loadMoney() {
   }
   const context = { window, console: fakeConsole }
   vm.runInNewContext(source, context)
-  return { money: window.A380Money, window, events, warnings }
+  return { money: window.SaasMoney, window, events, warnings }
 }
 
 /** 去掉注释后再断言（注释里允许说明「历史上是 ¥，现已由 money.js 统一」）。 */
@@ -37,7 +37,7 @@ async function loadSaas() {
   const saasSource = await readFile(new URL('./saas.js', import.meta.url), 'utf8')
   const window = {
     location: { origin: 'http://localhost:5175', hostname: 'localhost', port: '5175', search: '?preview=1' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const context = {
@@ -49,7 +49,7 @@ async function loadSaas() {
   }
   vm.runInNewContext(moneySource, context)
   vm.runInNewContext(saasSource, context)
-  return { saas: window.SAAS, money: window.A380Money }
+  return { saas: window.SAAS, money: window.SaasMoney }
 }
 
 test('formatMoney：CNY/USD、0、负数、大额千分位与无效值', async () => {

@@ -1,5 +1,5 @@
 /**
- * C 端「我的预约」房型/包厢展示口径（window.A380ReservationRoom）。
+ * C 端「我的预约」房型/包厢展示口径（window.SaasReservationRoom）。
  *
  * 预约预约的是**房型**（包厢类型），具体包厢到店后由门店分配：
  *  - 新数据：显示 roomTypeName，回退 roomTypeCode；未分配包厢时提示「到店后由门店分配包厢」；
@@ -67,7 +67,7 @@
     return roomTypeLabel(reservation).historical;
   }
 
-  root.A380ReservationRoom = {
+  root.SaasReservationRoom = {
     ASSIGN_HINT: ASSIGN_HINT,
     PENDING_TEXT: PENDING_TEXT,
     HISTORICAL_TEXT: HISTORICAL_TEXT,

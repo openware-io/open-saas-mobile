@@ -137,7 +137,7 @@ button { cursor: pointer; }
 .summary-card p { margin: 6px 0; color: var(--muted); font-size: 13px; }
 .summary-card strong { color: var(--danger); }
 
-/* KTV 预约：在 App WebView 中使用内容标题，避免与原生 A380 标题栏重复 */
+/* KTV 预约：在 App WebView 中使用内容标题，避免与原生 Saas 标题栏重复 */
 body.embedded-host.booking-page .page-head { display: none; }
 body.embedded-host.booking-page #app { padding-top: 0; }
 .booking-intro { margin: 2px 2px 14px; padding: 8px 2px 2px; }

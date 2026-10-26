@@ -21,9 +21,9 @@ test('refreshes CSRF token once when context selection rejects a stale token', a
     .mockResolvedValueOnce({ ok: true, json: async () => ({ csrfToken: 'fresh-token' }) })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ selected: true }) })
   const window = {
-    location: { origin: 'https://miniservice.dev.example.com', pathname: '/a380/' },
+    location: { origin: 'https://miniservice.dev.example.com', pathname: '/saas/' },
     sessionStorage: sessionStorage(),
-    A380Context: { chooseSingle: (items) => items[0] },
+    SaasContext: { chooseSingle: (items) => items[0] },
     dispatchEvent: vi.fn(),
   }
   const context = {
@@ -38,7 +38,7 @@ test('refreshes CSRF token once when context selection rejects a stale token', a
   }
   vm.runInNewContext(source, context)
 
-  await expect(window.A380OAuth.ready).resolves.toBeUndefined()
+  await expect(window.SaasOAuth.ready).resolves.toBeUndefined()
   const selectCalls = fetch.mock.calls.filter(([url]) => String(url).startsWith('/api/v1/auth/context/select'))
   expect(selectCalls).toHaveLength(2)
   expect(selectCalls[0][1].headers['X-CSRF-Token']).toBe('stale-token')
@@ -55,7 +55,7 @@ test('refreshes CSRF token once when context selection rejects a stale token', a
 test('does not redirect to bare OAuth when an IM bridge authorization fails', async () => {
   const source = await readFile(new URL('./oauth.js', import.meta.url), 'utf8')
   const window = {
-    location: { origin: 'http://192.168.31.91:30082', pathname: '/a380/' },
+    location: { origin: 'http://192.168.31.91:30082', pathname: '/saas/' },
     sessionStorage: sessionStorage(),
     dispatchEvent: vi.fn(),
     GVBridge: { login: vi.fn().mockRejectedValue(new Error('bridge unavailable')) },
@@ -72,5 +72,5 @@ test('does not redirect to bare OAuth when an IM bridge authorization fails', as
   }
   vm.runInNewContext(source, context)
 
-  await expect(window.A380OAuth.ready).rejects.toMatchObject({ code: 'IM_BRIDGE_AUTH_FAILED' })
+  await expect(window.SaasOAuth.ready).rejects.toMatchObject({ code: 'IM_BRIDGE_AUTH_FAILED' })
 })

@@ -1,6 +1,6 @@
 /* 真实酒店：C 端目录/详情/报价/下单，数据来自 /business/hotel API。 */
 function hotelMoney(minor, currency) {
-  return window.A380Money ? window.A380Money.formatMoney(minor, currency) : '-';
+  return window.SaasMoney ? window.SaasMoney.formatMoney(minor, currency) : '-';
 }
 
 async function hotelApi(path, options) {
@@ -19,7 +19,7 @@ async function hotelApi(path, options) {
 }
 
 // 「我的」页要复用酒店订单；只暴露只读列表，不复制订单渲染逻辑。
-window.A380HotelBookings = {
+window.SaasHotelBookings = {
   list: function () { return hotelApi('/business/hotel/bookings'); }
 };
 
@@ -227,13 +227,13 @@ async function renderRealHotelOrders() {
 }
 document.addEventListener('click', function (event) {
   var button = event.target.closest('[data-hotel-picker]');
-  if (!button || !window.A380Picker) return;
+  if (!button || !window.SaasPicker) return;
   event.preventDefault();
   var name = button.getAttribute('data-hotel-picker');
   var key = name === 'hotel-check-in' ? 'checkIn' : name === 'hotel-check-out' ? 'checkOut' : name === 'hotel-rooms' ? 'rooms' : name;
   var options = hotelPickerOptions[key] || [];
   if (!options.length) return;
-  window.A380Picker.open('#hotel-booking-form', name, hotelPickerTitle(key), options);
+  window.SaasPicker.open('#hotel-booking-form', name, hotelPickerTitle(key), options);
 });
 document.addEventListener('click', async function (event) {
   var button = event.target.closest('[data-cancel-booking]');

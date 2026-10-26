@@ -129,13 +129,13 @@
         body: body ? JSON.stringify(body) : undefined
       }, requestTimeoutMs());
       // 网关 X-Currency 兜底：老接口响应体不带 currencyCode 时也能对齐全站符号（不覆盖已选币种）
-      if (window.A380Money && typeof window.A380Money.applyResponseCurrency === 'function') {
-        window.A380Money.applyResponseCurrency(null, resp);
+      if (window.SaasMoney && typeof window.SaasMoney.applyResponseCurrency === 'function') {
+        window.SaasMoney.applyResponseCurrency(null, resp);
       }
       if (resp.status === 401 && !retriedAfterContextRefresh
-          && window.A380OAuth && typeof window.A380OAuth.refreshContext === 'function') {
+          && window.SaasOAuth && typeof window.SaasOAuth.refreshContext === 'function') {
         retriedAfterContextRefresh = true;
-        await window.A380OAuth.refreshContext();
+        await window.SaasOAuth.refreshContext();
         continue;
       }
       if (!resp.ok) {
@@ -171,17 +171,17 @@
 
   /** 默认营业时间（18:00–次日 05:00）的新副本：唯一口径在 business-hours.js，这里只做转发。 */
   function defaultBusinessHours() {
-    var api = window.A380BusinessHours;
+    var api = window.SaasBusinessHours;
     // business-hours.js 未加载时也绝不返回 null：预约时间的默认值必须有可用的开门时刻
     if (!api || typeof api.parseBusinessHours !== 'function') return { openTime: '18:00', closeTime: '05:00' };
     return api.parseBusinessHours(api.DEFAULT_BUSINESS_HOURS);
   }
 
   // —— 金额口径：后端金额一律最小货币单位（cst_wallet_account.available_amount / ord_*_item.amount 等），
-  //    展示唯一入口是 window.A380Money（c-end/money.js）。本文件只做转发：币种字典、÷/× 最小单位
+  //    展示唯一入口是 window.SaasMoney（c-end/money.js）。本文件只做转发：币种字典、÷/× 最小单位
   //    的换算都只允许在 money.js 内部，页面与接口层都不得再散落 /100、*100 或自建符号表。——
   function money() {
-    var api = window.A380Money;
+    var api = window.SaasMoney;
     if (!api) throw new Error('money.js 未加载：C 端金额展示唯一入口缺失');
     return api;
   }
@@ -1043,10 +1043,10 @@
     /** 创建预约：预约按房型（roomTypeId）创建，**不得传具体包厢 resourceId**（服务端 400 拒绝）。 */
     async createReservation(payload) {
       try {
-        if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'OpenChat' + String(Date.now()).slice(-10), status: 'PENDING' }; });
+        if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; });
         return unwrap(await request('POST', '/api/v1/business/reservations', payload));
       } catch (e) {
-        return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'OpenChat' + String(Date.now()).slice(-10), status: 'PENDING' }; }, e);
+        return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; }, e);
       }
     },
 

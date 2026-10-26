@@ -16,7 +16,7 @@ async function loadSaasInDemoMode() {
       port: '5175',
       search: '?preview=1',
     },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const context = {

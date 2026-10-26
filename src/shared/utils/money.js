@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 /**
- * B 端（A380后台）金额展示唯一入口。
+ * B 端（Saas后台）金额展示唯一入口。
  *
  * 币种是**租户级唯一来源**：`POST /api/v1/auth/context/select` 响应体的 `currencyCode`（缺省 USD）；
  * 网关 `X-Currency` 头只作旧接口兜底（见 `src/shared/api/request.js`）。切币种**不做汇率换算**：
@@ -29,7 +29,7 @@ export const SUPPORTED_CURRENCIES = Object.freeze(['CNY', 'USD'])
 export const DEFAULT_CURRENCY = 'USD'
 export const CHANGE_EVENT = 'currency-changed'
 
-const STORAGE_KEY = 'a380-b-currency'
+const STORAGE_KEY = 'saas-b-currency'
 
 function storage() {
   try {

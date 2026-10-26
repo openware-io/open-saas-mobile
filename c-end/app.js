@@ -1,12 +1,12 @@
 const app = document.querySelector('#app');
 const toast = document.querySelector('#toast');
-const data = window.A380_DATA;
+const data = window.Saas_DATA;
 
-try { localStorage.removeItem('a380-orders'); } catch (_) {}
+try { localStorage.removeItem('saas-orders'); } catch (_) {}
 
 const state = {
-  cart: readLocal('a380-cart', {}),
-  orders: readLocal('a380-orders', []),
+  cart: readLocal('saas-cart', {}),
+  orders: readLocal('saas-orders', []),
   venueSort: {},
   ktvRooms: [
     ['K01 小包', '空闲', '绿色'], ['K02 小包', '占用', '蓝色'], ['K03 小包', '预定', '橙色'],
@@ -27,8 +27,8 @@ function readLocal(key, fallback) {
 function saveLocal(key, value) {
   try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* WebView private mode fallback */ }
 }
-/** 今天 + days 的设备本地日期（走 A380DateTime，禁止 toISOString 的 UTC 平移）。 */
-function dateOffset(days) { return A380DateTime.dateOffset(days); }
+/** 今天 + days 的设备本地日期（走 SaasDateTime，禁止 toISOString 的 UTC 平移）。 */
+function dateOffset(days) { return SaasDateTime.dateOffset(days); }
 function formatDate(value) {
   const date = new Date(`${value}T00:00:00`);
   return `${date.getMonth() + 1}月${date.getDate()}日`;
@@ -41,7 +41,7 @@ function minorMoney(amount, currencyCode) { return SAAS.formatFen(amount, curren
 function currencyLabel(code) { return SAAS.currencyLabel(code); }
 /** 后端错误 -> 中文可执行提示（币种/渠道类错误码统一在 api-errors.js 翻译，不外泄错误码与英文原文）。 */
 function apiErrorText(error, fallback) {
-  return window.A380ApiErrors ? window.A380ApiErrors.describe(error, fallback) : (fallback || '操作失败，请稍后重试');
+  return window.SaasApiErrors ? window.SaasApiErrors.describe(error, fallback) : (fallback || '操作失败，请稍后重试');
 }
 function image(name) { return `./assets/images/${name}`; }
 /**
@@ -111,7 +111,7 @@ function bindRoomTypeGallery(root) {
 function escapeHtml(value = '') {
   return String(value).replace(/[&<>'"]/g, char => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' })[char]);
 }
-function orderNo() { return `OpenChat${Date.now().toString().slice(-10)}`; }
+function orderNo() { return `SaaS${Date.now().toString().slice(-10)}`; }
 function go(route) { location.hash = `#/${route}`; }
 /**
  * 当前路由：`#/my-orders` → `my-orders`（空 hash 视作 home）。
@@ -202,7 +202,7 @@ function emptyState(icon, title, copy) {
 function serviceById(id) { return data.services.find(item => item.id === id); }
 function addOrder(order) {
   state.orders.unshift(order);
-  saveLocal('a380-orders', state.orders);
+  saveLocal('saas-orders', state.orders);
 }
 
 // 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「SaaS 币」、比例 100），
@@ -253,7 +253,7 @@ function payLegAvailableInput(method) {
 function renderHome() {
   app.innerHTML = `
     <section class="wallet">
-      <h1 class="brand">OpenChat</h1>
+      <h1 class="brand">SaaS</h1>
       <div class="balances">
         <button class="balance" data-route="ledger/coin"><span class="balance-label">${walletBrand}：</span><strong id="wallet-coin">—</strong></button>
         <button class="balance" data-route="ledger/points"><span class="balance-label">积分：</span><strong id="wallet-points">—</strong></button>
@@ -265,10 +265,10 @@ function renderHome() {
     <div class="section-head"><h2>热门服务</h2><button data-toast="更多服务持续更新中">查看全部 ›</button></div>
     <section class="mini-grid">
       ${[
-        ['hotel', 'OpenChat酒店', 'hotel-1.jpg', '豪华房低至 ' + mockMoney(368)],
-        ['bar', 'OpenChat酒吧', 'bar-1.jpg', '散台 / 卡座在线预约'],
-        ['billiards', 'OpenChat台球厅', 'billiards-1.png', '专业球台 · 到店即玩'],
-        ['foot', 'OpenChat足浴', 'foot-1.png', '放松身心 · 预约免排队'],
+        ['hotel', 'SaaS酒店', 'hotel-1.jpg', '豪华房低至 ' + mockMoney(368)],
+        ['bar', 'SaaS酒吧', 'bar-1.jpg', '散台 / 卡座在线预约'],
+        ['billiards', 'SaaS台球厅', 'billiards-1.png', '专业球台 · 到店即玩'],
+        ['foot', 'SaaS足浴', 'foot-1.png', '放松身心 · 预约免排队'],
       ].map(([id, title, pic, note]) => `<button class="mini-card" data-route="service/${id}"><img src="${image(pic)}" alt="${title}"><span class="mini-card-copy"><strong>${title}</strong><small>${note}</small></span></button>`).join('')}
     </section>
     <section class="home-notice"><span>ⓘ</span><p>页面内数据、价格和订单均为前端演示，不会产生真实费用。</p></section>`;
@@ -349,7 +349,7 @@ async function renderLedger(type) {
 /** 静默刷新账本：后台充值 / 抵扣会改余额与明细，回到前台或长时间停留时重取一次。 */
 function refreshLedger(type) {
   var route = ledgerRoute(type);
-  return A380PageLoad.refreshPage({
+  return SaasPageLoad.refreshPage({
     name: 'ledger',
     isCurrent: function () { return routeIsCurrent(route); },
     load: function () { return loadLedgerData(type); },
@@ -392,7 +392,7 @@ function ledgerRow(r, isCoin) {
 function renderKtvBusiness() {
   const counts = state.ktvRooms.reduce((result, room) => ({ ...result, [room[1]]: (result[room[1]] || 0) + 1 }), {});
   app.innerHTML = `${pageHead('KTV 业务')}
-    <section class="business-hero"><img src="${image('ktv-1.png')}" alt="OpenChat KTV"><div><small>今日营业额</small><strong>${mockMoney(8680)}</strong><p>较昨日 +12.6%</p></div></section>
+    <section class="business-hero"><img src="${image('ktv-1.png')}" alt="SaaS KTV"><div><small>今日营业额</small><strong>${mockMoney(8680)}</strong><p>较昨日 +12.6%</p></div></section>
     <section class="metric-grid"><button data-toast="显示今日全部订单"><strong>18</strong><span>今日订单</span></button><button data-toast="显示使用中包厢"><strong>${counts['占用'] || 0}</strong><span>使用中</span></button><button data-toast="显示预约客户"><strong>${counts['预定'] || 0}</strong><span>待到店</span></button><button data-toast="显示待处理包厢"><strong>${(counts['清理中'] || 0)+(counts['维护'] || 0)}</strong><span>待处理</span></button></section>
     <div class="section-head"><h2>快捷操作</h2><span></span></div>
     <section class="quick-grid"><button data-toast="已打开预约登记（mock）"><span>📅</span>预约登记</button><button data-toast="已打开组合收银（mock）"><span>💳</span>前台收银</button><button data-toast="交接班数据已生成（mock）"><span>🔁</span>交接班</button><button data-toast="今日业绩 ${mockMoney(8680)}，套餐销售12份"><span>📊</span>经营报表</button></section>
@@ -421,7 +421,7 @@ const ktvRoomTypeCache = {};
 /** 选包厢类型页：只列房型（包厢可能几十上百个，房型不多），不出现任何具体包厢号。 */
 async function renderKtvBooking() {
   app.innerHTML = `${pageHead('KTV 预约 · 选择包厢类型', '<span></span>')}
-    <section class="detail-card merchant"><h2>OpenChat KTV</h2><p class="address">📍 ${data.venues.ktv.address}</p><div class="tag-row">${data.venues.ktv.tags.map(tag => `<span>${tag}</span>`).join('')}</div></section>
+    <section class="detail-card merchant"><h2>SaaS KTV</h2><p class="address">📍 ${data.venues.ktv.address}</p><div class="tag-row">${data.venues.ktv.tags.map(tag => `<span>${tag}</span>`).join('')}</div></section>
     <div class="section-head"><h2>选择包厢类型</h2><span></span></div>
     <p class="form-hint">本店包厢数量较多，线上只需选择包厢类型；具体包厢到店后由门店分配。</p>
     <section class="package-list"><p class="form-hint">包厢类型加载中…</p></section>`;
@@ -431,7 +431,7 @@ async function renderKtvBooking() {
   } catch (error) {
     const listEl = app.querySelector('.package-list');
     if (listEl) listEl.innerHTML = emptyState('⚠️', '包厢类型加载失败', '请检查网络后点击返回重试');
-    console.error('[a380] KTV room types load failed', error);
+    console.error('[saas] KTV room types load failed', error);
     return;
   }
   Object.keys(ktvRoomTypeCache).forEach(function (k) { delete ktvRoomTypeCache[k]; });
@@ -482,24 +482,24 @@ function roomTypeThumb(roomType) {
  * 所以这里按「门店营业本地时间 + +08:00 偏移」序列化；不得再用 UTC 的 toISOString。
  */
 function storeTimeAfter(dateStr, timeStr, hours) {
-  return A380DateTime.storeOffsetDateTime(dateStr, timeStr, Number(hours) || 0);
+  return SaasDateTime.storeOffsetDateTime(dateStr, timeStr, Number(hours) || 0);
 }
 
 /**
  * 营业时间（18:00–次日 05:00 这类跨自然日区间）的唯一实现是 business-hours.js：
  * 页面只做转发，禁止在这里内联重写「跨天 / 左闭右开」的时段判断（服务端仍会 422 强制校验）。
  */
-function businessHoursText(hours) { return A380BusinessHours.businessHoursText(hours); }
-function isWithinBusinessHours(timeStr, hours) { return A380BusinessHours.isWithinBusinessHours(timeStr, hours); }
+function businessHoursText(hours) { return SaasBusinessHours.businessHoursText(hours); }
+function isWithinBusinessHours(timeStr, hours) { return SaasBusinessHours.isWithinBusinessHours(timeStr, hours); }
 /** 渲染预约页时取到的当前营业时段；未取到（或加载失败）按默认营业时间兜底，时段选择与提交校验共用同一份。 */
-let bookingBusinessHours = A380BusinessHours.parseBusinessHours(A380BusinessHours.DEFAULT_BUSINESS_HOURS);
+let bookingBusinessHours = SaasBusinessHours.parseBusinessHours(SaasBusinessHours.DEFAULT_BUSINESS_HOURS);
 /** 打开预约页取一次营业时间：失败按默认值兜底（读路径不抛异常），可选带门店 id。 */
 async function loadBookingBusinessHours(storeId) {
   try {
-    bookingBusinessHours = A380BusinessHours.parseBusinessHours(await SAAS.getBusinessHours(storeId));
+    bookingBusinessHours = SaasBusinessHours.parseBusinessHours(await SAAS.getBusinessHours(storeId));
   } catch (error) {
-    console.warn('[a380] business hours load failed', error);
-    bookingBusinessHours = A380BusinessHours.parseBusinessHours(A380BusinessHours.DEFAULT_BUSINESS_HOURS);
+    console.warn('[saas] business hours load failed', error);
+    bookingBusinessHours = SaasBusinessHours.parseBusinessHours(SaasBusinessHours.DEFAULT_BUSINESS_HOURS);
   }
   return bookingBusinessHours;
 }
@@ -604,7 +604,7 @@ function confirmBookingPicker() {
   closeBookingPicker();
 }
 
-window.A380Picker = { open: openBookingPickerFor };
+window.SaasPicker = { open: openBookingPickerFor };
 
 // —— KTV 报价：与后台「按房型定价」同源（/business/ktv/pricing）。
 //    预约按**包厢类型**创建（具体包厢到店后由门店分配），所以房型列表 / 预约确认页 /
@@ -614,7 +614,7 @@ async function loadKtvRoomPricing(rooms) {
   try {
     await SAAS.resolveKtvRoomPricing(rooms);
   } catch (error) {
-    console.warn('[a380] KTV room pricing load failed', error);
+    console.warn('[saas] KTV room pricing load failed', error);
   }
 }
 /** 已解析的生效价：按房型 id / 包厢 id / 房型编码任一维度命中（未命中返回 null，不回退门店价）。 */
@@ -726,14 +726,14 @@ async function renderKtvBookForm(roomTypeId) {
 function renderVenueReservationSuccess(saved, fields, venue) {
   app.innerHTML = `${pageHead('提交成功', '<span></span>')}
     <section class="success"><div>✓</div><h1>预约已提交</h1><p>门店将电话与您确认到店。</p></section>
-    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('OpenChat' + saved.id))}</strong></div><div><span>预约项目</span><strong>${escapeHtml(venue.title)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name || '')}</strong></div><div><span>到店时间</span><strong>${escapeHtml(fields.date + ' ' + fields.time)}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>`;
+    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('SaaS' + saved.id))}</strong></div><div><span>预约项目</span><strong>${escapeHtml(venue.title)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name || '')}</strong></div><div><span>到店时间</span><strong>${escapeHtml(fields.date + ' ' + fields.time)}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>`;
 }
 
 function renderKtvReservationSuccess(saved, fields, roomType) {
   const roomTypeName = roomType && roomType.name ? roomType.name : '包厢类型';
   app.innerHTML = `${pageHead('提交成功', '<span></span>')}
     <section class="success"><div>✓</div><h1>预约已提交</h1><p>门店将电话与您确认到店；具体包厢到店后由门店分配。</p></section>
-    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('OpenChat' + saved.id))}</strong></div><div><span>预约包厢类型</span><strong>${escapeHtml(roomTypeName)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name)}</strong></div><div><span>到店时间</span><strong>${fields.date} ${fields.time}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>
+    <section class="plain-card success-summary"><div><span>预约编号</span><strong>${escapeHtml(saved.reservationNo || ('SaaS' + saved.id))}</strong></div><div><span>预约包厢类型</span><strong>${escapeHtml(roomTypeName)}</strong></div><div><span>预约人</span><strong>${escapeHtml(fields.name)}</strong></div><div><span>到店时间</span><strong>${fields.date} ${fields.time}</strong></div><div><span>状态</span><strong class="income">${escapeHtml(saved.status || 'PENDING')}</strong></div></section>
     <div class="success-actions"><button class="primary-button" data-route="home">返回服务首页</button></div>`;
 }
 
@@ -856,7 +856,7 @@ function cartTotal() {
 }
 function addCart(key, count = 1) {
   state.cart[key] = (state.cart[key] || 0) + count;
-  saveLocal('a380-cart', state.cart);
+  saveLocal('saas-cart', state.cart);
   showToast('已加入购物车');
 }
 
@@ -1007,7 +1007,7 @@ function renderTravelResults(kind) {
   const isFlight = kind === 'flights';
   if (isFlight) {
     app.innerHTML = `${pageHead(`${state.travel.from}-${state.travel.to}`)}
-      <div class="date-strip">${[-1,0,1,2].map(offset => { const value = new Date(`${state.travel.date}T00:00:00`); value.setDate(value.getDate()+offset); const date = A380DateTime.localDateString(value); return `<button class="${offset===0?'active':''}" data-flight-date="${date}"><span>${offset===0?'出发':'可选'}</span><strong>${formatDate(date)}</strong><small>${mockMoney(558+Math.abs(offset)*22)}起</small></button>`; }).join('')}</div>
+      <div class="date-strip">${[-1,0,1,2].map(offset => { const value = new Date(`${state.travel.date}T00:00:00`); value.setDate(value.getDate()+offset); const date = SaasDateTime.localDateString(value); return `<button class="${offset===0?'active':''}" data-flight-date="${date}"><span>${offset===0?'出发':'可选'}</span><strong>${formatDate(date)}</strong><small>${mockMoney(558+Math.abs(offset)*22)}起</small></button>`; }).join('')}</div>
       <div class="chips"><button class="chip active">智能排序</button><button class="chip">价格最低</button><button class="chip">出发最早</button><button class="chip">仅看直飞</button></div>
       <section class="flight-list">${data.flights.map((flight,index) => `<article class="flight-card" data-route="travel-detail/flights/${index}"><div class="flight-times"><span><strong>${flight.start}</strong><small>${flight.from}</small></span><i>${flight.duration}${flight.direct?' · 直飞':' · 中转'}</i><span><strong>${flight.end}</strong><small>${flight.to}</small></span></div><footer><span>${flight.airline} ${flight.id} · ${flight.model}</span><strong>${mockMoney(flight.price)}</strong></footer></article>`).join('')}</section>`;
   } else {
@@ -1062,7 +1062,7 @@ function renderOrders() {
 }
 
 // 后端时间统一是 LocalDateTime（无时区，即门店营业本地时间），展示按字面量取用，不按设备时区平移。
-function formatDateTime(value) { return A380DateTime.formatStoreDateTime(value); }
+function formatDateTime(value) { return SaasDateTime.formatStoreDateTime(value); }
 
 function reservationBadge(status) {
   var map = {
@@ -1103,7 +1103,7 @@ function refreshMyBalances() {
 
 function renderMy() {
   var memberId = SAAS.config.memberId || '';
-  var nick = memberId ? ('会员 ' + memberId) : 'OpenChat 会员';
+  var nick = memberId ? ('会员 ' + memberId) : 'SaaS 会员';
   app.innerHTML =
     '<section class="me-hero">' +
       '<div class="me-avatar">' + escapeHtml((memberId || 'A').toString().slice(0, 1).toUpperCase()) + '</div>' +
@@ -1134,7 +1134,7 @@ async function ensureRoomCache() {
       if (room && room.id != null) ktvRoomCache[room.id] = room;
     });
   } catch (e) {
-    console.warn('[a380] KTV room media load failed', e);
+    console.warn('[saas] KTV room media load failed', e);
   }
 }
 
@@ -1146,7 +1146,7 @@ async function ensureRoomTypeCache() {
       if (roomType && roomType.roomTypeId != null) ktvRoomTypeCache[roomType.roomTypeId] = roomType;
     });
   } catch (e) {
-    console.warn('[a380] KTV room types load failed', e);
+    console.warn('[saas] KTV room types load failed', e);
   }
 }
 
@@ -1177,15 +1177,15 @@ function reservationCard(r) {
     : '';
   var room = ktvRoomCache[r.resourceId];
   // 房型优先（roomTypeName → roomTypeCode）；历史行（迁移前只有 resourceId）回退旧包厢名并标注「历史预约」。
-  var label = A380ReservationRoom.roomTypeLabel(r, room);
-  var allocation = A380ReservationRoom.allocationText(r, room);
+  var label = SaasReservationRoom.roomTypeLabel(r, room);
+  var allocation = SaasReservationRoom.allocationText(r, room);
   var desc = label.historical && room && typeof room.description === 'string' ? room.description.trim() : '';
   // 与房型列表/预约确认页同一份取价结果（同房型只请求一次），口径保持一致。
   var priceText = ktvRoomPriceShort(reservationPricingRef(r));
   return '<article><header><span>预约 ' + escapeHtml(r.reservationNo || ('#' + r.id)) + '</span>' + reservationBadge(r.status) + '</header>' +
     '<div class="reservation-room">' + thumbHtml(label.historical ? roomThumb(room) : '', label.text, '🎤') +
       '<div class="reservation-room-copy"><h3>' + escapeHtml(label.text) +
-        (label.historical ? ' <span class="badge gray">' + A380ReservationRoom.HISTORICAL_TEXT + '</span>' : '') + '</h3>' +
+        (label.historical ? ' <span class="badge gray">' + SaasReservationRoom.HISTORICAL_TEXT + '</span>' : '') + '</h3>' +
       (desc ? '<p class="reservation-desc">' + escapeHtml(desc) + '</p>' : '') +
       '<p class="reservation-desc">' + escapeHtml(allocation) + '</p></div></div>' +
     (priceText ? '<p>' + (label.historical ? '包厢价格：' : '包厢类型价格：') + escapeHtml(priceText) + '</p>' : '') +
@@ -1240,12 +1240,12 @@ var HOTEL_BOOKING_STATUS = {
 
 async function loadHotelBookingsSafe() {
   try {
-    if (window.A380HotelBookings && typeof window.A380HotelBookings.list === 'function') {
-      var rows = await window.A380HotelBookings.list();
+    if (window.SaasHotelBookings && typeof window.SaasHotelBookings.list === 'function') {
+      var rows = await window.SaasHotelBookings.list();
       return Array.isArray(rows) ? rows : [];
     }
   } catch (error) {
-    console.warn('[a380] hotel bookings unavailable', error && error.message);
+    console.warn('[saas] hotel bookings unavailable', error && error.message);
   }
   return [];
 }
@@ -1289,12 +1289,12 @@ function paintMyReservations(items) {
 
 /**
  * 「我的预约」：加载态 → 接口 → 列表；任何失败/超时都渲染可重试的错误态（绝不停在「加载中…」）。
- * 统一走 A380PageLoad.renderPage（加载态与错误态的唯一出口），并带路由守卫：
+ * 统一走 SaasPageLoad.renderPage（加载态与错误态的唯一出口），并带路由守卫：
  * 请求期间用户已经点走，结果与错误态都直接丢弃，不落到别的页面上。
  */
 async function renderMyReservations() {
   var route = 'my-reservations';
-  await A380PageLoad.renderPage({
+  await SaasPageLoad.renderPage({
     name: 'my-reservations',
     retryRoute: route,
     errorTitle: '预约加载失败',
@@ -1308,7 +1308,7 @@ async function renderMyReservations() {
 /** 静默刷新「我的预约」：后台确认 / 到店 / 取消会改预约状态，回到前台时重取一次，不闪加载态。 */
 function refreshMyReservations() {
   var route = 'my-reservations';
-  return A380PageLoad.refreshPage({
+  return SaasPageLoad.refreshPage({
     name: 'my-reservations',
     isCurrent: function () { return routeIsCurrent(route); },
     load: loadMyReservations,
@@ -1335,7 +1335,7 @@ function paintMyOrders(items) {
 /** 「我的消费」：接口失败/超时出可重试的错误态，不再把页面留在「加载中…」；带路由守卫。 */
 async function renderMyOrders() {
   var route = 'my-orders';
-  await A380PageLoad.renderPage({
+  await SaasPageLoad.renderPage({
     name: 'my-orders',
     retryRoute: route,
     errorTitle: '消费单加载失败',
@@ -1352,7 +1352,7 @@ async function renderMyOrders() {
  */
 function refreshMyOrders() {
   var route = 'my-orders';
-  return A380PageLoad.refreshPage({
+  return SaasPageLoad.refreshPage({
     name: 'my-orders',
     isCurrent: function () { return routeIsCurrent(route); },
     load: loadMyOrders,
@@ -1376,11 +1376,11 @@ function itemBadge(s) {
  * 没有 try/catch、没有超时——C 端会话的权限快照不含 `order.view`（消费者应用只被授予
  * reservation.view / reservation.create），`GET /api/v1/business/orders/{id}/items` 直接回
  * 403 PERMISSION_DENIED，异常一路冒泡出 async 函数，页面就永远停在「加载中…」。
- * 现在两个 await 都放进 A380PageLoad.renderPage：失败或超时一律渲染「加载失败 + 重试」。
+ * 现在两个 await 都放进 SaasPageLoad.renderPage：失败或超时一律渲染「加载失败 + 重试」。
  */
 async function renderOrderItems(orderId) {
   var route = 'order-items/' + orderId;
-  await A380PageLoad.renderPage({
+  await SaasPageLoad.renderPage({
     name: 'order-items',
     retryRoute: route,
     errorTitle: '加项列表加载失败',
@@ -1558,25 +1558,25 @@ function paintOrderBill(orderId, bill) {
 
 async function renderOrderBill(orderId) {
   var route = 'order-bill/' + orderId;
-  app.innerHTML = pageHead('消费账单', '<span></span>') + A380PageLoad.loadingHtml('账单加载中…');
+  app.innerHTML = pageHead('消费账单', '<span></span>') + SaasPageLoad.loadingHtml('账单加载中…');
   try {
     var bill = await loadOrderBill(orderId);
     // 路由守卫：请求期间用户已经点走，这一批数据直接丢弃，不画到别的页面上。
     if (!routeIsCurrent(route)) return;
     paintOrderBill(orderId, bill);
   } catch (error) {
-    console.error('[a380] order bill load failed', error);
+    console.error('[saas] order bill load failed', error);
     // 失败态整页替换（不再依赖 document.querySelector('.item-list') 一定存在），并给重试入口。
     if (!routeIsCurrent(route)) return;
     app.innerHTML = pageHead('消费账单', '<span></span>')
-      + A380PageLoad.errorHtml('账单加载失败', error, route);
+      + SaasPageLoad.errorHtml('账单加载失败', error, route);
   }
 }
 
 /** 静默刷新账单：后台结台 / 收款会改已收与应收，顾客盯着账单页时也要跟上（不闪加载态、失败保留屏上数据）。 */
 function refreshOrderBill(orderId) {
   var route = 'order-bill/' + orderId;
-  return A380PageLoad.refreshPage({
+  return SaasPageLoad.refreshPage({
     name: 'order-bill',
     isCurrent: function () { return routeIsCurrent(route); },
     load: function () { return loadOrderBill(orderId); },
@@ -1642,8 +1642,8 @@ document.addEventListener('click', event => {
   if (travelField) {
     const fieldName = travelField.getAttribute('data-travel-picker');
     const options = travelPickerOptions[fieldName] || [];
-    if (options.length && window.A380Picker) {
-      window.A380Picker.open('#travel-search-form', fieldName, travelPickerTitle(fieldName), options);
+    if (options.length && window.SaasPicker) {
+      window.SaasPicker.open('#travel-search-form', fieldName, travelPickerTitle(fieldName), options);
     }
     return;
   }
@@ -1652,8 +1652,8 @@ document.addEventListener('click', event => {
     const formSelector = venueField.getAttribute('data-form') || '#venue-order-form';
     const fieldName = venueField.getAttribute('data-venue-picker');
     const options = venuePickerOptions[fieldName] || [];
-    if (options.length && window.A380Picker) {
-      window.A380Picker.open(formSelector, fieldName, venuePickerTitle(fieldName), options);
+    if (options.length && window.SaasPicker) {
+      window.SaasPicker.open(formSelector, fieldName, venuePickerTitle(fieldName), options);
     }
     return;
   }
@@ -1738,10 +1738,10 @@ document.addEventListener('click', event => {
     const key = step.dataset.cartStep;
     state.cart[key] = Math.max(0, (state.cart[key] || 0) + Number(step.dataset.delta));
     if (!state.cart[key]) delete state.cart[key];
-    saveLocal('a380-cart', state.cart); return renderCart();
+    saveLocal('saas-cart', state.cart); return renderCart();
   }
   if (event.target.closest('[data-clear-cart]')) {
-    state.cart = {}; saveLocal('a380-cart', state.cart); return renderCart();
+    state.cart = {}; saveLocal('saas-cart', state.cart); return renderCart();
   }
   if (event.target.closest('[data-swap-route]')) {
     const from = document.querySelector('[name="from"]'); const to = document.querySelector('[name="to"]');
@@ -1794,7 +1794,7 @@ document.addEventListener('submit', async event => {
       const saved = await SAAS.createReservation(payload);
       renderKtvReservationSuccess(saved, fields, roomType);
     } catch (error) {
-      console.error('[a380] KTV reservation create failed', error);
+      console.error('[saas] KTV reservation create failed', error);
       showToast(apiErrorText(error, '预约提交失败，请稍后重试'));
     } finally {
       if (submitButton && document.body.contains(submitButton)) {
@@ -1866,7 +1866,7 @@ document.addEventListener('submit', async event => {
 function renderLogin() {
   document.body.classList.add('login-mode');
   app.innerHTML = '<section class="login-page">' +
-    '<div class="login-brand"><span>OpenChat</span><small>生活服务</small></div>' +
+    '<div class="login-brand"><span>SaaS</span><small>生活服务</small></div>' +
     '<h1>登录 C 端</h1>' +
     '<p class="login-lead">使用 SaaS 账号登录，或从 OpenChat 直接进入。</p>' +
     '<form id="c-login-form" class="login-form">' +
@@ -1891,7 +1891,7 @@ function renderLogin() {
     button.textContent = '登录中…';
     try {
       const loginType = identifier.indexOf('@') >= 0 ? 'email' : 'phone';
-      await window.A380OAuth.loginWithPassword(loginType, identifier, password);
+      await window.SaasOAuth.loginWithPassword(loginType, identifier, password);
       document.body.classList.remove('login-mode');
       await loadWalletTokenConfig();
       booted = true;
@@ -1901,7 +1901,7 @@ function renderLogin() {
         errorBox.textContent = '账号或密码错误，请重试';
       } else if (error && (error.code === 'MEMBERSHIP_INACTIVE' || error.code === 'NO_CONSUMER_ACCESS'
           || error.code === 'CUSTOMER_NOT_BOUND' || error.code === 'IAM_CONTEXT_UNAVAILABLE')) {
-        errorBox.textContent = '该账号还没有 C 端客户身份，请联系门店或在 OpenChat 完成绑定';
+        errorBox.textContent = '该账号还没有 C 端客户身份，请联系门店或在 SaaS 完成绑定';
       } else {
         errorBox.textContent = '登录失败，请检查网络后重试';
       }
@@ -1910,12 +1910,12 @@ function renderLogin() {
     }
   });
   document.querySelector('#c-login-im').addEventListener('click', function () {
-    window.A380OAuth.startOAuth();
+    window.SaasOAuth.startOAuth();
   });
 }
 
 function renderAuthError(error) {
-  const detail = window.A380AuthErrors ? window.A380AuthErrors.describe(error) : {
+  const detail = window.SaasAuthErrors ? window.SaasAuthErrors.describe(error) : {
     title: '暂时无法进入服务', description: '网络或授权服务异常，请稍后重试。', retryable: true
   };
   app.innerHTML = '<section class="empty"><span>🔐</span><h2>' + escapeHtml(detail.title)
@@ -1926,7 +1926,7 @@ function renderAuthError(error) {
     button.disabled = true;
     button.textContent = '检查中…';
     try {
-      await window.A380OAuth.ensureAuth();
+      await window.SaasOAuth.ensureAuth();
       render();
     } catch (nextError) {
       if (nextError && nextError.code === 'LOGIN_REQUIRED') { renderLogin(); return; }
@@ -1948,7 +1948,7 @@ function renderAuthError(error) {
     }
     window.close();
   });
-  console.error('[a380] auth failed', error);
+  console.error('[saas] auth failed', error);
 }
 
 window.addEventListener('hashchange', render);
@@ -1974,7 +1974,7 @@ window.addEventListener('currency-changed', function () { if (booted) render(); 
  *      不新增第二条数据路径；
  *   3) 长时间停在前台（例如顾客盯着账单等结台）：45s 兜底一次（≥30s，不做轮询式刷新）。
  *
- * 三条铁律（与 A380PageLoad.refreshPage 的分工）：
+ * 三条铁律（与 SaasPageLoad.refreshPage 的分工）：
  *   · 静默：屏上已有数据时不挂加载态（不闪白），失败保留屏上数据（不整页替换成错误页）；
  *   · 幂等：同一路由已有刷新在途就不再叠一次请求；
  *   · 不串页：所有刷新都带路由守卫（routeIsCurrent），请求回来晚就整批丢弃。
@@ -2023,7 +2023,7 @@ setInterval(function () { refreshVisibleView(); }, REFRESH_INTERVAL_MS);
 
 (async function boot() {
   try {
-    await window.A380OAuth.ready;
+    await window.SaasOAuth.ready;
     // 先取租户储值配置（品牌名 + 代币比例）再首屏渲染，避免页面先闪一次硬编码品牌名
     await loadWalletTokenConfig();
     booted = true;

@@ -6,8 +6,8 @@ test('only auto-selects a single tenant context', async () => {
   const source = await readFile(new URL('./context.js', import.meta.url), 'utf8')
   const window = {}
   vm.runInNewContext(source, { window })
-  expect(window.A380Context.chooseSingle([{ contextId: 'one' }])).toEqual({ contextId: 'one' })
-  expect(window.A380Context.chooseSingle([{ contextId: 'one' }, { contextId: 'two' }])).toBeNull()
+  expect(window.SaasContext.chooseSingle([{ contextId: 'one' }])).toEqual({ contextId: 'one' })
+  expect(window.SaasContext.chooseSingle([{ contextId: 'one' }, { contextId: 'two' }])).toBeNull()
 })
 
 test('C端加项页面 does not expose a free-form price input', async () => {
@@ -36,9 +36,9 @@ test('KTV包厢列表在容纳人数下方显示接口返回的位置', async ()
   expect(listSource).toContain('escapeHtml(areaName)')
 })
 
-test('OpenChat后台 presents OpenChat as tenant and KTV store as context, not a peer tab', async () => {
+test('SaaS后台 presents SaaS as tenant and KTV store as context, not a peer tab', async () => {
   const source = await readFile(new URL('../src/b-end/App.vue', import.meta.url), 'utf8')
-  expect(source).toContain('OpenChat后台')
-  expect(source).toContain('OpenChat租户')
+  expect(source).toContain('SaaS后台')
+  expect(source).toContain('SaaS租户')
   expect(source).not.toContain('to="/stores"')
 })

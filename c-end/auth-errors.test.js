@@ -8,7 +8,7 @@ test('describes missing consumer access without saying generic no permission', a
   const window = {}
   vm.runInNewContext(source, { window })
 
-  const result = window.A380AuthErrors.describe({ code: 'NO_CONSUMER_ACCESS' })
+  const result = window.SaasAuthErrors.describe({ code: 'NO_CONSUMER_ACCESS' })
 
   expect(result.title).toBe('服务尚未开通')
   expect(result.description).toContain('联系管理员')
@@ -20,7 +20,7 @@ test('describes transient authorization outage as retryable', async () => {
   const window = {}
   vm.runInNewContext(source, { window })
 
-  const result = window.A380AuthErrors.describe({ code: 'IAM_CONTEXT_UNAVAILABLE' })
+  const result = window.SaasAuthErrors.describe({ code: 'IAM_CONTEXT_UNAVAILABLE' })
 
   expect(result.retryable).toBe(true)
   expect(result.title).toBe('服务暂时不可用')
@@ -31,7 +31,7 @@ test('explains missing PKCE support instead of showing a blank authorization fai
   const window = {}
   vm.runInNewContext(source, { window })
 
-  const result = window.A380AuthErrors.describe({ code: 'PKCE_UNAVAILABLE' })
+  const result = window.SaasAuthErrors.describe({ code: 'PKCE_UNAVAILABLE' })
 
   expect(result.title).toBe('当前环境不支持授权')
   expect(result.description).toContain('IM App')
@@ -42,7 +42,7 @@ test('explains an expired IM session without redirecting to an unauthenticated O
   const window = {}
   vm.runInNewContext(source, { window })
 
-  const result = window.A380AuthErrors.describe({ code: 'IM_SESSION_EXPIRED' })
+  const result = window.SaasAuthErrors.describe({ code: 'IM_SESSION_EXPIRED' })
 
   expect(result.title).toBe('IM 登录已失效')
   expect(result.description).toContain('重新登录')

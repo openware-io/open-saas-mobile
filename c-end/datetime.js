@@ -1,5 +1,5 @@
 /**
- * C 端日期时间工具（原生 JS，挂 window.A380DateTime；与 context.js/auth-errors.js 同一加载方式，可被 vitest 直接加载）。
+ * C 端日期时间工具（原生 JS，挂 window.SaasDateTime；与 context.js/auth-errors.js 同一加载方式，可被 vitest 直接加载）。
  *
  * 两套时间口径必须分清，不能互相代替：
  * - 设备本地日期（localDateString / dateOffset）：日期选择器「今天+N」按设备本地时区取，
@@ -79,7 +79,7 @@
     return Number(parts[2]) + '月' + Number(parts[3]) + '日 ' + pad2(parts[4]) + ':' + pad2(parts[5]);
   }
 
-  root.A380DateTime = {
+  root.SaasDateTime = {
     STORE_OFFSET_MINUTES: STORE_OFFSET_MINUTES,
     localDateString: localDateString,
     dateOffset: dateOffset,

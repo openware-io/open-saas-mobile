@@ -1,6 +1,6 @@
 import { applyResponseCurrency } from '../shared/utils/money'
 
-// B 端（OpenChat后台）OAuth 客户端：标准接入流程（PKCE + 授权码 + token + bind + 运营角色校验 + 上下文选择）
+// B 端（SaaS后台）OAuth 客户端：标准接入流程（PKCE + 授权码 + token + bind + 运营角色校验 + 上下文选择）
 // 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> /identity/oauth/im/callback -> 服务端会话 -> /auth/contexts 校验运营角色 -> /auth/context/select 选上下文
 // 不改 open-chat-app：入口由 IM 后台「小程序·服务管理」登记服务项(link 指向本 H5)，跳转+授权走 IM 开放平台。
 
@@ -135,7 +135,7 @@ async function ensureLocalDevSession() {
     return true
   } catch (e) {
     // 服务端未开启调试放权（生产/未配置）时必须静默回退正常 OAuth，不能因此中断进入流程。
-    console.warn('[a380-b-oauth] dev session unavailable, fallback to oauth:', e && e.message)
+    console.warn('[saas-b-oauth] dev session unavailable, fallback to oauth:', e && e.message)
     return false
   }
 }
@@ -284,7 +284,7 @@ async function ensureOperatorAuth(options = {}) {
     } catch (e) {
       // App 容器已有桥时，浏览器式 OAuth 跳转不带 IM JWT，不能作为失败回退。
       if (hasNativeBridge()) throw nativeBridgeAuthorizationError(e)
-      console.warn('[a380-b-oauth] bridge unavailable, fallback redirect:', e && e.message)
+      console.warn('[saas-b-oauth] bridge unavailable, fallback redirect:', e && e.message)
     }
   }
 
