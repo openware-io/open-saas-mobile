@@ -220,6 +220,7 @@ async function renderRealHotelOrders() {
       PENDING_DEPOSIT: ['待付定金', 'pending'],
       CONFIRMED: ['已确认', 'confirmed'],
       CANCELLED: ['已取消', 'cancelled'],
+      CHECKED_OUT: ['已退房', 'completed'],
       COMPLETED: ['已完成', 'completed'],
       NO_SHOW: ['未到店', 'no-show']
     };
