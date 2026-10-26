@@ -38,6 +38,17 @@ export function noShowReservation(id) {
 export function openTable(reservationId, freeWaitMinutes) {
   return request.post('/api/v1/business/reservations/' + reservationId + '/open-table', { freeWaitMinutes })
 }
+// —— 酒店前台 ——
+export function listHotelFrontDeskTasks() {
+  return request.get('/api/v1/business/hotel/frontdesk/tasks')
+}
+export function checkInHotelBooking(id) {
+  return request.post('/api/v1/business/hotel/frontdesk/bookings/' + id + '/checkin')
+}
+export function checkOutHotelBooking(id) {
+  return request.post('/api/v1/business/hotel/frontdesk/bookings/' + id + '/checkout')
+}
+
 // —— 订单 / KTV 会话 ——
 export function listOrders() {
   return request.get('/api/v1/business/orders')

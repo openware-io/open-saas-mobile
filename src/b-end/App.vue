@@ -30,10 +30,13 @@
     </main>
 
     <nav v-if="state === 'authed'" class="tabbar">
-      <router-link to="/reservations" class="tab" active-class="active">
+      <router-link v-if="isHotel" to="/hotel" class="tab" active-class="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V4h10v17M14 9h6v12M7 8h4M7 12h4M7 16h4M17 13h1M17 17h1"/></svg><span>酒店前台</span>
+      </router-link>
+      <router-link v-else to="/reservations" class="tab" active-class="active">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg><span>预约</span>
       </router-link>
-      <router-link to="/orders" class="tab" active-class="active">
+      <router-link v-if="!isHotel" to="/orders" class="tab" active-class="active">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg><span>订单</span>
       </router-link>
     </nav>
@@ -41,7 +44,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted, provide } from 'vue'
+import { computed, ref, onMounted, provide } from 'vue'
+import { useRouter } from 'vue-router'
 import { ensureOperatorAuth } from '@/b-end/oauth'
 
 const state = ref('loading')
@@ -49,6 +53,8 @@ const errorTitle = ref('暂未开通运营权限')
 const errorDescription = ref('你当前使用的 IM 账号尚未开通 SaaS 商户端的运营权限。')
 const availableContexts = ref([])
 const activeContext = ref(null)
+const router = useRouter()
+const isHotel = computed(() => activeContext.value?.businessType === 'HOTEL')
 provide('activeContext', activeContext)
 
 async function auth(force = false, contextId = null) {
@@ -58,6 +64,8 @@ async function auth(force = false, contextId = null) {
     const selected = await ensureOperatorAuth({ force, contextId })
     activeContext.value = selected || null
     state.value = selected ? 'authed' : 'loading' // null = 正在跳转授权
+    if (selected?.businessType === 'HOTEL') await router.replace('/hotel')
+    else if (router.currentRoute.value.path === '/hotel') await router.replace('/reservations')
   } catch (e) {
     if (e?.code === 'NO_OPERATOR_ROLE') {
       errorTitle.value = '尚未开通运营权限'
