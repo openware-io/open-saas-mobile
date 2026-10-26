@@ -149,6 +149,7 @@ async function renderRealHotelDetail(hotelId) {
       '<section class="form-card"><h2>入住人</h2>' +
       '<label>姓名<input id="hotel-guest-name" placeholder="请输入入住人姓名"></label>' +
       '<label>手机号<input id="hotel-guest-phone" inputmode="tel" placeholder="用于接收确认"></label>' +
+      '<label>积分抵扣（可选）<input id="hotel-points" inputmode="numeric" placeholder="输入使用积分数"></label>' +
       '<button class="primary-button" data-hotel-book>提交预订</button></section>';
   } catch (error) {
     var root = document.querySelector('#real-hotel-detail');
@@ -191,7 +192,7 @@ async function bookRealHotel(hotelId) {
   try {
     var booking = await hotelApi('/business/hotel/bookings', {
       method: 'POST',
-      body: JSON.stringify({ roomTypeId: roomTypeId, ratePlanId: ratePlanId, checkInDate: checkIn, checkOutDate: checkOut, rooms: rooms, guestName: guestName, guestPhone: guestPhone, note: 'C H5' }),
+      body: JSON.stringify({ roomTypeId: roomTypeId, ratePlanId: ratePlanId, checkInDate: checkIn, checkOutDate: checkOut, rooms: rooms, guestName: guestName, guestPhone: guestPhone, pointsUsed: Number((document.querySelector('#hotel-points') || {}).value || 0), note: 'C H5' }),
     });
     if (!routeIsCurrent('real-hotel/' + hotelId)) return;
     app.innerHTML = pageHead('预订成功', '<span></span>') +
