@@ -15,7 +15,7 @@ window.A380_DATA = {
     coin: {
       // 储值币是**数量**口径（不是钱）：balance 仍是「这笔钱」的最小货币单位（对账用），
       // tokenAmount 是代币个数 = balance ÷ 100 × 租户比例（默认 100）；展示走 SAAS.formatTokens，不带货币符号。
-      title: 'OpenChat币', balance: 888000, tokenAmount: 888000,
+      title: 'SaaS 币', balance: 888000, tokenAmount: 888000,
       records: [
         ['充值到账', '+2,000', '今天 09:26'], ['OpenChat酒店消费', '-368', '昨天 21:08'],
         ['活动奖励', '+188', '08月25日 18:30'], ['OpenChat KTV消费', '-298', '08月23日 22:15'],

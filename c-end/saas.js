@@ -341,7 +341,7 @@
   var MOCK_POINTS = { balance: '12680' };
 
   /** 储值品牌展示名的默认值；真实展示名一律取租户配置 tnt_tenant_config.wallet_brand_name。 */
-  var DEFAULT_WALLET_BRAND = 'OpenChat币';
+  var DEFAULT_WALLET_BRAND = 'SaaS 币';
 
   /** 租户储值配置（品牌名 + 代币比例）全站只读一次：钱包、账本与页面共用同一份，避免同页多次请求。 */
   var walletTokenConfigRequest = null;
@@ -1090,7 +1090,7 @@
     },
 
     /**
-     * 钱包账本（OpenChat币明细）：GET /api/v1/me/wallet/ledger。
+     * 钱包账本（SaaS 币明细）：GET /api/v1/me/wallet/ledger。
      * 每行按数量口径补齐 `tokenAmount`；行内 amount / currencyCode 保留用于对账。
      */
     async getWalletLedger() {
@@ -1231,7 +1231,7 @@
     },
 
     /**
-     * 租户储值展示名与比例（wallet_brand_name / wallet_ratio，默认 OpenChat币 / 100）。
+     * 租户储值展示名与比例（wallet_brand_name / wallet_ratio，默认 SaaS 币 / 100）。
      * 服务端按签名上下文取租户，客户端不传 tenantId，也不硬编码品牌名；全站只读一次并缓存。
      */
     async getWalletTokenConfig() {

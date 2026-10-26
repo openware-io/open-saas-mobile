@@ -334,5 +334,5 @@ export async function listPaymentMethods() {
 }
 
 export async function getWalletTokenConfig() {
-  return { brandName: 'OpenChat币', ratio: 100 }
+  return { brandName: 'SaaS 币', ratio: 100 }
 }

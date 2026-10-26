@@ -116,7 +116,7 @@ export function listPaymentMethods(view = 'admin') {
 }
 /**
  * 租户储值配置（品牌展示名 wallet_brand_name + 主单位↔代币比例 wallet_ratio），
- * 按规范账单/支付/充值各端统一展示该值，不硬编码「OpenChat币」。
+ * 按规范账单/支付/充值各端统一展示该值，不硬编码「SaaS 币」。
  */
 export function getWalletTokenConfig(tenantId) {
   return request.get('/api/v1/admin/tenant/config', { params: { tenantId } })

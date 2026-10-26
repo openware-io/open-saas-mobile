@@ -205,7 +205,7 @@ function addOrder(order) {
   saveLocal('a380-orders', state.orders);
 }
 
-// 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「OpenChat币」、比例 100），
+// 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「SaaS 币」、比例 100），
 // 各页面统一使用，不硬编码。储值币与积分是**数量**，不是货币：展示只走 SAAS.formatTokens / formatPoints。
 var walletBrand = SAAS.DEFAULT_WALLET_BRAND;
 var walletRatio = 100;

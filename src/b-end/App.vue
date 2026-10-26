@@ -46,7 +46,7 @@ import { ensureOperatorAuth } from '@/b-end/oauth'
 
 const state = ref('loading')
 const errorTitle = ref('暂未开通运营权限')
-const errorDescription = ref('你当前使用的 IM 账号尚未开通 OpenChat 商户端的运营权限。')
+const errorDescription = ref('你当前使用的 IM 账号尚未开通 SaaS 商户端的运营权限。')
 const availableContexts = ref([])
 const activeContext = ref(null)
 provide('activeContext', activeContext)
@@ -61,7 +61,7 @@ async function auth(force = false, contextId = null) {
   } catch (e) {
     if (e?.code === 'NO_OPERATOR_ROLE') {
       errorTitle.value = '尚未开通运营权限'
-      errorDescription.value = '当前 IM 账号已完成登录，但还没有 OpenChat 商户端的运营角色。'
+      errorDescription.value = '当前 IM 账号已完成登录，但还没有 SaaS 商户端的运营角色。'
     } else if (e?.code === 'IM_SESSION_EXPIRED') {
       errorTitle.value = 'IM 登录已失效'
       errorDescription.value = '请返回 IM 重新登录后，再进入 OpenChat后台。'

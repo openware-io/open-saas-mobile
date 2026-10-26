@@ -193,7 +193,7 @@ test('报价文案不使用后端 displayText（避免同页两种符号 / 切�
 test('C 端金币/钱包术语与币种解耦（品牌名不是币种符号）', async () => {
   const { saas } = await loadSaas()
 
-  expect(saas.DEFAULT_WALLET_BRAND).toBe('OpenChat币')
+  expect(saas.DEFAULT_WALLET_BRAND).toBe('SaaS 币')
   expect(saas.DEFAULT_WALLET_BRAND).not.toMatch(/[¥$￥]/)
 
   const wallet = await saas.getWallet()
@@ -202,7 +202,7 @@ test('C 端金币/钱包术语与币种解耦（品牌名不是币种符号）',
   // 页面展示的是代币**数量**（formatTokens）：储值币不带币种、不拼品牌名，数量与币种解耦。
   expect(saas.formatFen(wallet.availableAmount, wallet.currencyCode)).toBe('$8,880.00')
   expect(saas.formatTokens(wallet.tokenAmount)).toBe('888,000')
-  expect(saas.formatTokens(wallet.tokenAmount)).not.toMatch(/[¥$￥元]|OpenChat币/)
+  expect(saas.formatTokens(wallet.tokenAmount)).not.toMatch(/[¥$￥元]|SaaS 币/)
 
   // 积分是积分个数，不是钱：不经过 formatMoney，也不带「积分」单位
   const points = await saas.getPoints()
