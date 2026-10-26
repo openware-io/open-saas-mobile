@@ -23,12 +23,24 @@ window.SaasHotelBookings = {
   list: function () { return hotelApi('/business/hotel/bookings'); }
 };
 
+function bindHotelCoverFallback(root) {
+  if (!root) return;
+  root.querySelectorAll('img.hotel-cover-img').forEach(function (img) {
+    img.addEventListener('error', function () {
+      var cover = document.createElement('div');
+      cover.className = img.classList.contains('small') ? 'hotel-cover small' : 'hotel-cover';
+      cover.textContent = '🏨';
+      img.replaceWith(cover);
+    });
+  });
+}
+
 var hotelListCache = [];
 
 function hotelCards(hotels) {
   return hotels.map(function (hotel) {
     return '<article class="venue-card" data-real-hotel="' + hotel.id + '">' +
-      '<div class="hotel-cover">🏨</div>' +
+      '<img class="hotel-cover-img" src="./assets/hotel-cover.svg" alt="' + escapeHtml(hotel.name) + ' 封面">' +
       '<div class="venue-copy"><h3>' + escapeHtml(hotel.name) + '</h3>' +
       '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
       '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
@@ -41,7 +53,7 @@ async function renderRealHotelList() {
   app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-hotel-orders">订单</button>') +
     '<section class="list" id="real-hotel-list"><p class="empty">酒店加载中…</p></section>';
   var list = document.querySelector('#real-hotel-list');
-  if (list && hotelListCache.length) list.innerHTML = hotelCards(hotelListCache);
+  if (list && hotelListCache.length) { list.innerHTML = hotelCards(hotelListCache); bindHotelCoverFallback(list); }
   try {
     var hotels = await hotelApi('/business/hotel/catalog/hotels');
     if (!routeIsCurrent('service/hotel')) return;
@@ -54,11 +66,13 @@ async function renderRealHotelList() {
     }
     hotelListCache = hotels;
     list.innerHTML = hotelCards(hotels);
+    bindHotelCoverFallback(list);
   } catch (error) {
     list = document.querySelector('#real-hotel-list');
     if (!list) return;
     if (hotelListCache.length) {
       list.innerHTML = hotelCards(hotelListCache);
+      bindHotelCoverFallback(list);
       showToast('网络不稳定，已显示上次结果');
       return;
     }

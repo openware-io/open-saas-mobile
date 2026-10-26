@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" role="img" aria-label="SaaS Hotel">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e9fbf5"/>
+      <stop offset="1" stop-color="#d6f4ea"/>
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" fill="url(#sky)"/>
+  <circle cx="518" cy="72" r="34" fill="#fff7cf"/>
+  <path d="M0 300 640 300 640 360 0 360Z" fill="#c9eee0"/>
+  <rect x="120" y="120" width="400" height="190" rx="12" fill="#fff"/>
+  <rect x="96" y="96" width="448" height="34" rx="10" fill="#13b981"/>
+  <rect x="150" y="150" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="222" y="150" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="294" y="150" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="366" y="150" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="438" y="150" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="150" y="210" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="222" y="210" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="366" y="210" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="438" y="210" width="56" height="40" rx="6" fill="#bfeadb"/>
+  <rect x="286" y="228" width="68" height="82" rx="8" fill="#0b6f55"/>
+  <rect x="302" y="244" width="36" height="20" rx="4" fill="#8ee5c9"/>
+  <text x="320" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#0b6f55">SaaS Hotel</text>
+</svg>
