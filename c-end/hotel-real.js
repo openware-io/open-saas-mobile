@@ -40,7 +40,7 @@ var hotelListCache = [];
 function hotelCards(hotels) {
   return hotels.map(function (hotel) {
     return '<article class="venue-card" data-real-hotel="' + hotel.id + '">' +
-      '<img class="hotel-cover-img" src="./assets/hotel-cover.svg" alt="' + escapeHtml(hotel.name) + ' 封面">' +
+      '<img class="hotel-cover-img" src="' + escapeHtml(hotel.coverImageUrl || './assets/hotel-cover.svg') + '" alt="' + escapeHtml(hotel.name) + ' 封面">' +
       '<div class="venue-copy"><h3>' + escapeHtml(hotel.name) + '</h3>' +
       '<p><span class="rating">★ 4.9</span> · 真实房态</p>' +
       '<p class="ellipsis">' + escapeHtml(hotel.address || '') + ' · ' + escapeHtml(hotel.timezone || '') + '</p>' +
