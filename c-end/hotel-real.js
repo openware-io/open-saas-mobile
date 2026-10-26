@@ -18,6 +18,11 @@ async function hotelApi(path, options) {
   return payload;
 }
 
+// 「我的」页要复用酒店订单；只暴露只读列表，不复制订单渲染逻辑。
+window.A380HotelBookings = {
+  list: function () { return hotelApi('/business/hotel/bookings'); }
+};
+
 var hotelListCache = [];
 
 function hotelCards(hotels) {

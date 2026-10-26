@@ -1223,20 +1223,62 @@ function orderCard(o) {
 }
 
 /** 预约列表数据：首屏与静默刷新共用同一份加载（房态 + 房型取价，同一口径）。 */
+/**
+ * 我的预约/消费里的酒店订单：酒店预订是独立资源，不能只读 KTV 预约/订单。
+ * 酒店接口失败时保留 KTV 列表，不把整个“我的”页打成错误态。
+ */
+var HOTEL_BOOKING_STATUS = {
+  PENDING_PAYMENT: ['待支付', 'orange'],
+  CONFIRMED: ['已确认', 'blue'],
+  CANCELLED: ['已取消', 'gray'],
+  COMPLETED: ['已完成', 'green'],
+  NO_SHOW: ['未到店', 'gray']
+};
+
+async function loadHotelBookingsSafe() {
+  try {
+    if (window.A380HotelBookings && typeof window.A380HotelBookings.list === 'function') {
+      var rows = await window.A380HotelBookings.list();
+      return Array.isArray(rows) ? rows : [];
+    }
+  } catch (error) {
+    console.warn('[a380] hotel bookings unavailable', error && error.message);
+  }
+  return [];
+}
+
+function hotelBookingCard(booking) {
+  var status = HOTEL_BOOKING_STATUS[booking.status] || [booking.status || '处理中', 'gray'];
+  var checkIn = booking.checkInDate ? '入住 ' + booking.checkInDate : '入住日期待确认';
+  var checkOut = booking.checkOutDate ? ' · 退房 ' + booking.checkOutDate : '';
+  return '<article><header><span>酒店 ' + escapeHtml(booking.bookingNo || ('#' + booking.id)) + '</span>' +
+    '<span class="badge ' + status[1] + '">' + escapeHtml(status[0]) + '</span></header>' +
+    '<h3>酒店 · ' + escapeHtml(booking.roomType || '房型待确认') + '</h3>' +
+    '<p>' + escapeHtml(checkIn + checkOut) + '</p>' +
+    '<p>房间 ' + escapeHtml(booking.roomNo || '待分配') + '</p>' +
+    '<footer><span>' + escapeHtml(status[0]) + '</span><b>' + minorMoney(booking.amountMinor, booking.currency) + '</b></footer>' +
+    '<button class="secondary-button" data-route="my-hotel-orders">查看酒店订单</button></article>';
+}
+
 async function loadMyReservations() {
   await ensureRoomCache();
   var items = await SAAS.listReservations();
   if (!Array.isArray(items)) items = [];
   // 预约按房型取价（历史行按旧包厢取价），与房型列表/预约确认页口径一致。
   await loadKtvRoomPricing(items.map(reservationPricingRef));
-  return items;
+  var hotel = await loadHotelBookingsSafe();
+  return { ktv: items, hotel: hotel };
 }
 
 /** 预约列表绘制：首屏与静默刷新共用同一份渲染。 */
 function paintMyReservations(items) {
-  var list = Array.isArray(items) ? items : [];
-  var html = list.length
-    ? '<section class="item-list">' + list.map(reservationCard).join('') + '</section>'
+  var ktv = Array.isArray(items) ? items : ((items && items.ktv) || []);
+  var hotel = (items && items.hotel) || [];
+  var cards = hotel.filter(function (booking) { return booking.status !== 'CANCELLED'; })
+    .map(hotelBookingCard)
+    .concat(ktv.map(reservationCard));
+  var html = cards.length
+    ? '<section class="item-list">' + cards.join('') + '</section>'
     : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里');
   app.innerHTML = pageHead('我的预约', '<span></span>') + html;
   bindThumbFallback(app);
@@ -1272,16 +1314,23 @@ function refreshMyReservations() {
 }
 
 /** 「我的消费」列表数据：首屏与静默刷新共用同一份加载。 */
-function loadMyOrders() { return SAAS.listOrders(); }
+async function loadMyOrders() {
+  var results = await Promise.all([SAAS.listOrders(), loadHotelBookingsSafe()]);
+  return { orders: Array.isArray(results[0]) ? results[0] : [], hotel: results[1] };
+}
 
 /**
  * 「我的消费」绘制：首屏与静默刷新共用同一份渲染（金额只走 orderCard → orderLiveAmount）。
  * 内容没变就不动屏（避免无谓的整块重绘）：静默刷新时屏上不闪、不丢焦点。
  */
 function paintMyOrders(items) {
-  var list = Array.isArray(items) ? items : [];
-  var html = pageHead('我的消费', '<span></span>') + (list.length
-    ? '<section class="item-list">' + list.map(orderCard).join('') + '</section>'
+  var list = Array.isArray(items) ? items : ((items && items.orders) || []);
+  var hotel = (items && items.hotel) || [];
+  var hotelCards = hotel.filter(function (booking) { return booking.status !== 'CANCELLED'; })
+    .map(hotelBookingCard);
+  var cards = hotelCards.concat(list.map(orderCard));
+  var html = pageHead('我的消费', '<span></span>') + (cards.length
+    ? '<section class="item-list">' + cards.join('') + '</section>'
     : emptyState('🧾', '还没有消费单', '到店消费后，账单会显示在这里'));
   if (app.innerHTML === html) return;
   app.innerHTML = html;
