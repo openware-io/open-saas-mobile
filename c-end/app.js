@@ -1228,8 +1228,11 @@ function orderCard(o) {
  * 酒店接口失败时保留 KTV 列表，不把整个“我的”页打成错误态。
  */
 var HOTEL_BOOKING_STATUS = {
+  PENDING: ['待确认', 'orange'],
   PENDING_PAYMENT: ['待支付', 'orange'],
   CONFIRMED: ['已确认', 'blue'],
+  CHECKED_IN: ['已入住', 'green'],
+  CHECKED_OUT: ['已退房', 'gray'],
   CANCELLED: ['已取消', 'gray'],
   COMPLETED: ['已完成', 'green'],
   NO_SHOW: ['未到店', 'gray']
@@ -1314,23 +1317,16 @@ function refreshMyReservations() {
 }
 
 /** 「我的消费」列表数据：首屏与静默刷新共用同一份加载。 */
-async function loadMyOrders() {
-  var results = await Promise.all([SAAS.listOrders(), loadHotelBookingsSafe()]);
-  return { orders: Array.isArray(results[0]) ? results[0] : [], hotel: results[1] };
-}
+function loadMyOrders() { return SAAS.listOrders(); }
 
 /**
  * 「我的消费」绘制：首屏与静默刷新共用同一份渲染（金额只走 orderCard → orderLiveAmount）。
  * 内容没变就不动屏（避免无谓的整块重绘）：静默刷新时屏上不闪、不丢焦点。
  */
 function paintMyOrders(items) {
-  var list = Array.isArray(items) ? items : ((items && items.orders) || []);
-  var hotel = (items && items.hotel) || [];
-  var hotelCards = hotel.filter(function (booking) { return booking.status !== 'CANCELLED'; })
-    .map(hotelBookingCard);
-  var cards = hotelCards.concat(list.map(orderCard));
-  var html = pageHead('我的消费', '<span></span>') + (cards.length
-    ? '<section class="item-list">' + cards.join('') + '</section>'
+  var list = Array.isArray(items) ? items : [];
+  var html = pageHead('我的消费', '<span></span>') + (list.length
+    ? '<section class="item-list">' + list.map(orderCard).join('') + '</section>'
     : emptyState('🧾', '还没有消费单', '到店消费后，账单会显示在这里'));
   if (app.innerHTML === html) return;
   app.innerHTML = html;
