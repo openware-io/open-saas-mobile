@@ -4,7 +4,7 @@
  * 两套时间口径必须分清，不能互相代替：
  * - 设备本地日期（localDateString / dateOffset）：日期选择器「今天+N」按设备本地时区取，
  *   禁止 toISOString()（UTC）——东八区本地 00:00–07:59 会被写成前一天。
- * - 门店营业时间（storeOffsetDateTime / formatStoreDateTime）：后端 ord_reservation.start_at
+ * - 门店营业时间（storeOffsetDateTime / formatStoreDateTime）：后端 ktv_reservation.start_at
  *   存的是「门店营业本地时间」的墙上时间（ReservationApplicationService.toBusinessLocal
  *   把 OffsetDateTime 入参统一换算到 +08:00 后落库），所以：
  *   入参按带 +08:00 偏移的 OffsetDateTime 序列化，出参（LocalDateTime，无时区）按字面量展示，
