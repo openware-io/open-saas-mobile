@@ -6,8 +6,8 @@ SaaS-facing H5 frontend (`Vue 3 + Vite`, two entries) embedded in the mobile app
 
 | End | Entry | Path | Responsibility |
 | --- | --- | --- | --- |
-| **C-end** “OpenChat services” | `index.c.html` | `/a380/` | Room selection/reservation, bills and wallet |
-| **B-end** “OpenChat merchant” | `index.b.html` | `/b/` | On-site store operations: reservations, opening tables, checkout, cashier, stores |
+| **C-end** “SaaS services” | `index.c.html` | `/saas/` | Room selection/reservation, bills and wallet |
+| **B-end** “SaaS merchant” | `index.b.html` | `/b/` | On-site store operations: reservations, opening tables, checkout, cashier, stores |
 
 This repo contains only the mobile-facing H5. The full web admin console lives in `open-saas-admin` at `/saas/`.
 
@@ -15,7 +15,7 @@ This repo contains only the mobile-facing H5. The full web admin console lives i
 
 ```text
 package.json              Vue 3 + Vite + Vue Router + Pinia + Axios
-vite.config.c.js / .b.js  two build targets (dist-c → /a380/, dist-b → /b/)
+vite.config.c.js / .b.js  two build targets (dist-c → /saas/, dist-b → /b/)
 index.c.html / index.b.html
 src/
   shared/                 bridge (app-injected config) + axios + SaaS API + money/status utils
@@ -69,6 +69,6 @@ $env:VITE_DEV_API_TARGET = 'http://<kind-host>:30080'
 npm run dev:b
 ```
 
-Open the deployed H5 at `http://<kind-host>:30080/a380/` and `/b/`.
+Open the deployed H5 at `http://<kind-host>:30080/saas/` and `/b/`.
 
 The C-end uses an authorized IM user; the B-end uses an IM account granted operator permission in the SaaS tenant.

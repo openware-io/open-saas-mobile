@@ -4,7 +4,7 @@
   var messages = {
     NO_CONSUMER_ACCESS: {
       title: '服务尚未开通',
-      description: '当前账号尚未开通 OpenChat 服务，请联系管理员开通后重试。',
+      description: '当前账号尚未开通 SaaS 服务，请联系管理员开通后重试。',
       retryable: false,
     },
     CONTEXT_SELECTION_REQUIRED: {
@@ -39,7 +39,7 @@
     },
   };
 
-  root.A380AuthErrors = {
+  root.SaasAuthErrors = {
     describe: function (error) {
       var code = error && error.code;
       if (code && messages[code]) return messages[code];

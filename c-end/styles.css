@@ -11,7 +11,7 @@
   --card: #ffffff;
   --danger: #ff654e;
   --radius: 18px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
   background: var(--bg);
   color: var(--text);
 }
@@ -137,7 +137,7 @@ button { cursor: pointer; }
 .summary-card p { margin: 6px 0; color: var(--muted); font-size: 13px; }
 .summary-card strong { color: var(--danger); }
 
-/* KTV 预约：在 App WebView 中使用内容标题，避免与原生 A380 标题栏重复 */
+/* KTV 预约：在 App WebView 中使用内容标题，避免与原生 Saas 标题栏重复 */
 body.embedded-host.booking-page .page-head { display: none; }
 body.embedded-host.booking-page #app { padding-top: 0; }
 .booking-intro { margin: 2px 2px 14px; padding: 8px 2px 2px; }
@@ -204,7 +204,10 @@ body.embedded-host.booking-page #app { padding-top: 0; }
 .booking-action > div small { color: var(--muted); font-size: 9px; }
 .booking-action .primary-button { min-width: 132px; }
 .picker-open { overflow: hidden; }
-.booking-picker-mask { position: fixed; z-index: 80; inset: 0; display: flex; align-items: flex-end; background: rgba(20,28,38,.48); opacity: 0; pointer-events: none; transition: opacity .2s ease; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
+.booking-picker-mask { position: fixed; z-index: 80; top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0; display: flex; align-items: flex-end; background: rgba(20,28,38,.48); opacity: 0; pointer-events: none; transition: opacity .2s ease; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); }
 .booking-picker-mask.show { opacity: 1; pointer-events: auto; }
 .booking-picker-sheet { width: 100%; max-height: min(74vh,620px); overflow: hidden; padding: 8px 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 22px 22px 0 0; background: white; box-shadow: 0 -14px 38px rgba(11,30,62,.2); transform: translateY(24px); transition: transform .22s ease; }
 .booking-picker-mask.show .booking-picker-sheet { transform: translateY(0); }
@@ -365,7 +368,10 @@ body.embedded-host.booking-page #app { padding-top: 0; }
 
 .business-hero { position: relative; overflow: hidden; height: 168px; border-radius: 18px; color: white; background: #1f304e; }
 .business-hero img { width: 100%; height: 100%; object-fit: cover; opacity: .48; }
-.business-hero::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg,rgba(20,30,48,.88),rgba(20,30,48,.08)); }
+.business-hero::after { content: ""; position: absolute; top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0; background: linear-gradient(90deg,rgba(20,30,48,.88),rgba(20,30,48,.08)); }
 .business-hero div { position: absolute; z-index: 1; left: 20px; top: 25px; display: grid; }
 .business-hero small { color: rgba(255,255,255,.72); }
 .business-hero strong { margin: 5px 0; color: var(--gold); font-size: 34px; }
@@ -553,7 +559,10 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 /* 确认弹框（与全局设计风格统一） */
 .modal-mask {
   position: fixed;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
   z-index: 60;
   display: grid;
   place-items: center;
@@ -585,3 +594,235 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .modal-btn.ghost { border: 1px solid var(--line); background: #fff; color: var(--text); }
 .modal-btn.danger { border: 1px solid var(--danger); background: var(--danger); color: #fff; }
 
+
+/* 酒店业务沿用 KTV 的卡片/标签视觉语言 */
+.hotel-cover-img { width: 100%; height: 126px; display: block; object-fit: cover; border-radius: 18px; }
+.venue-card .hotel-cover-img { width: 96px; height: 96px; flex: 0 0 96px; border-radius: 16px; }
+.venue-card .venue-copy { min-width: 0; }
+.hotel-cover-img.small { width: 72px; height: 72px; border-radius: 16px; }
+.hotel-cover { display: grid; min-height: 126px; place-items: center; color: var(--primary-dark); background: linear-gradient(135deg,#e9fbf5,#d6f4ea); font-size: 38px; }
+.hotel-cover.small { width: 72px; min-height: 72px; border-radius: 16px; font-size: 26px; }
+.hotel-detail-head { display: flex; gap: 12px; align-items: center; }
+.hotel-detail-head h2 { margin: 0; }
+.hotel-detail-head p { margin: 4px 0 0; }
+.hotel-link { color: var(--primary-dark); font-weight: 700; }
+
+/* WebView 83 compatibility: flex gap, aspect-ratio, backdrop-filter */
+.compat-webview83 .page-head {
+  background: #fff;
+}
+.compat-webview83 .mini-card img {
+  height: 26vw;
+  max-height: 160px;
+}
+.compat-webview83 .product-main img {
+  height: 32vw;
+  max-height: 200px;
+}
+.compat-webview83 .balances {
+  gap: 0;
+}
+.compat-webview83 .balances > * + * {
+  margin-left: 28px;
+}
+.compat-webview83 .chips,
+.compat-webview83 .tag-row,
+.compat-webview83 .photo-strip,
+.compat-webview83 .booking-gallery,
+.compat-webview83 .home-notice,
+.compat-webview83 .ledger-hero div,
+.compat-webview83 .ledger-list > div,
+.compat-webview83 .summary-row,
+.compat-webview83 .package-card,
+.compat-webview83 .product-card footer,
+.compat-webview83 .booking-card > header,
+.compat-webview83 .action-bar > div,
+.compat-webview83 .stepper,
+.compat-webview83 .travel-hero {
+  gap: 0;
+}
+.compat-webview83 .chips > * + *,
+.compat-webview83 .tag-row > * + *,
+.compat-webview83 .photo-strip > * + *,
+.compat-webview83 .booking-gallery > * + *,
+.compat-webview83 .home-notice > * + *,
+.compat-webview83 .ledger-hero div > * + *,
+.compat-webview83 .ledger-list > div > * + *,
+.compat-webview83 .summary-row > * + *,
+.compat-webview83 .package-card > * + *,
+.compat-webview83 .product-card footer > * + *,
+.compat-webview83 .booking-card > header > * + *,
+.compat-webview83 .action-bar > div > * + *,
+.compat-webview83 .stepper > * + *,
+.compat-webview83 .travel-hero > * + * {
+  margin-left: 8px;
+}
+.compat-webview83 .package-card,
+.compat-webview83 .travel-hero {
+  align-items: flex-start;
+}
+
+/* Hotel form picker rows: the label already carries the field name. */
+.form-card label .booking-picker-row {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 0;
+  border-top: 0;
+  padding: 4px 0;
+}
+.form-card label .booking-field-copy strong {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.travel-search-form > label {
+  grid-template-columns: 88px minmax(0, 1fr);
+  white-space: nowrap;
+}
+.travel-search-form > label .booking-picker-row {
+  grid-template-columns: minmax(0, 1fr) 20px;
+  gap: 0;
+  border-top: 0;
+  padding: 4px 0;
+}
+.travel-search-form > label .booking-field-copy strong {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* 酒店订单卡片：独立于场馆双列卡片，避免取消按钮被挤成整块灰框 */
+.hotel-order-card {
+  display: grid;
+  gap: 12px;
+  border-radius: 18px;
+  background: #fff;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgba(38, 48, 62, .06);
+}
+.hotel-order-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hotel-order-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  word-break: break-all;
+}
+.hotel-order-head p {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.hotel-order-status {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hotel-order-status.is-pending { color: #b87408; background: #fff6e5; }
+.hotel-order-status.is-confirmed { color: #07845c; background: #e9fbf5; }
+.hotel-order-status.is-cancelled { color: #737d89; background: #f2f4f6; }
+.hotel-order-status.is-completed { color: #2874bf; background: #eff7ff; }
+.hotel-order-status.is-no-show { color: #b84b4b; background: #fff1f1; }
+.hotel-order-status.is-default { color: #737d89; background: #f2f4f6; }
+.hotel-order-dates {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 11px 0;
+}
+.hotel-order-dates small {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.hotel-order-dates strong {
+  display: block;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.hotel-order-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hotel-order-price {
+  color: var(--danger);
+  font-size: 18px;
+  font-weight: 800;
+}
+.hotel-order-cancel {
+  min-height: 36px;
+  border: 1px solid rgba(217, 72, 72, .32);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--danger);
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.hotel-order-cancel:active {
+  background: #fff4f4;
+}
+.retry-button {
+  display: block;
+  margin: 12px auto 0;
+  min-height: 40px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--primary-dark);
+  padding: 0 18px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* C 端独立登录页：不依赖 IM WebView，仍保留 App Bridge/IM 登录入口 */
+.login-mode .tab-bar { display: none !important; }
+.login-page {
+  min-height: 100vh;
+  padding: 48px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  background: radial-gradient(120% 70% at 50% 0%, #e9fbf5 0%, #f5f6f8 58%, #f5f6f8 100%);
+}
+.login-brand { display: flex; align-items: baseline; color: var(--primary-dark); font-weight: 800; }
+.login-brand span { font-size: 22px; letter-spacing: -.4px; }
+.login-brand small { margin-left: 8px; color: var(--muted); font-size: 12px; font-weight: 500; }
+.login-page h1 { margin: 28px 0 8px; color: var(--text); font-size: 26px; letter-spacing: -.4px; }
+.login-lead { margin: 0 0 22px; color: var(--muted); font-size: 14px; }
+.login-form { display: grid; border-radius: 18px; background: #fff; padding: 18px; box-shadow: 0 8px 24px rgba(38, 48, 62, .07); }
+.login-form label { display: grid; margin-bottom: 14px; color: var(--text); font-size: 13px; font-weight: 600; }
+.login-form input {
+  min-height: 44px;
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0 12px;
+  color: var(--text);
+  font-size: 15px;
+  outline: none;
+}
+.login-form input:focus { border-color: var(--primary); }
+.login-form .primary-button { margin-top: 4px; }
+.login-error { min-height: 18px; margin: 0 0 4px; color: var(--danger); font-size: 12px; }
+.login-im-button { margin-top: 12px; }
+.login-foot { margin: 20px 0 0; color: var(--muted); font-size: 12px; text-align: center; }
+.compat-webview83 .login-page { background: #f5f6f8; }

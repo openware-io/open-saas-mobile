@@ -6,8 +6,8 @@ SaaS 接入 App 的前端工程（**Vue3 + Vite 双入口**），承载两个对
 
 | 端 | 入口 | 部署路径 | 职责 |
 | --- | --- | --- | --- |
-| **C 端**「OpenChat 更多服务」 | `index.c.html` | `/a380/` | 顾客任选包厢预约、查账单/钱包 |
-| **B 端**「OpenChat 商户端」 | `index.b.html` | `/b/` | 门店现场操作（预约管理/开台/结算/收银/门店） |
+| **C 端**「SaaS 生活服务」 | `index.c.html` | `/c/` | 顾客任选包厢预约、查账单/钱包 |
+| **B 端**「SaaS 商户端」 | `index.b.html` | `/b/` | 门店现场操作（预约管理/开台/结算/收银/门店） |
 
 > 与 Web B 端后台（`open-saas-admin`，/saas/）区分：本仓库只放「对接移动端」的 H5；Web 桌面后台是 SaaS 本身提供的完整管理台，留在 `open-saas-admin`。
 
@@ -15,7 +15,7 @@ SaaS 接入 App 的前端工程（**Vue3 + Vite 双入口**），承载两个对
 
 ```
 package.json               vue3 + vite + vue-router + pinia + axios
-vite.config.c.js / .b.js   两个构建目标（dist-c → /a380/，dist-b → /b/）
+vite.config.c.js / .b.js   两个构建目标（dist-c → /c/，dist-b → /b/）
 index.c.html / index.b.html
 src/
   shared/                  两端共用：bridge(App注入配置) + api/request(axios) + api/saas(业务) + utils(金额分/状态)
@@ -95,7 +95,7 @@ npm run dev:c # C 端预约 H5，端口 5175
 # npm run dev:b # B 端商户 H5，端口 5176
 ```
 
-浏览器打开 `http://localhost:5175/`（C 端）或 `http://localhost:5176/index.b.html`（B 端）。也可以直接打开 Kind 部署的页面 `http://<Kind主机IP>:30080/a380/` 与 `/b/`：普通 `http://192.168.x.x` 不是 PKCE 需要的浏览器安全上下文，此时页面会走「调试放权」——调用 `POST /api/v1/dev/saas/session` 直接换调试会话（端口 5175/5176 + 内网/回环地址才触发，服务端默认关闭，仅本地 Kind 清单开启，详见 docs/kind-lan-integration.md）。未开启放权的环境会静默回退正常 OAuth。代理会把后端会话 Cookie 保持为本地联调可用的形式，前端仍只使用服务端 HttpOnly 会话，不读取或保存 token。
+浏览器打开 `http://localhost:5175/`（C 端）或 `http://localhost:5176/index.b.html`（B 端）。也可以直接打开 Kind 部署的页面 `http://<Kind主机IP>:30080/c/` 与 `/b/`：普通 `http://192.168.x.x` 不是 PKCE 需要的浏览器安全上下文，此时页面会走「调试放权」——调用 `POST /api/v1/dev/c/session` 直接换调试会话（端口 5175/5176 + 内网/回环地址才触发，服务端默认关闭，仅本地 Kind 清单开启，详见 docs/kind-lan-integration.md）。未开启放权的环境会静默回退正常 OAuth。代理会把后端会话 Cookie 保持为本地联调可用的形式，前端仍只使用服务端 HttpOnly 会话，不读取或保存 token。
 
 首次使用 OAuth 登录时，回调地址必须与浏览器实际打开的地址完全一致。Kind 的回调同步脚本默认登记 `localhost` 和 `127.0.0.1` 的 Vite 开发端口；若必须从另一台机器打开开发服务，应配置 HTTPS 后再通过 `-AdditionalViteCOrigins` 和 `-AdditionalViteBOrigins` 登记该 HTTPS 源站。
 

@@ -29,7 +29,7 @@ const billUrl = (id) => `/api/v1/business/orders/${id}/bill`
 
 /** 订单行：金额与状态都由服务端给（客户端不得再算）。 */
 const order = (over = {}) => Object.assign({
-  id: 9, orderNo: 'OpenChat-9', businessType: 'KTV', status: 'SERVING',
+  id: 9, orderNo: 'SaaS-9', businessType: 'KTV', status: 'SERVING',
   createdAt: '2024-05-01T10:00:00', totalAmount: 6150, liveTotalAmount: 6150, currencyCode: 'CNY',
 }, over)
 
@@ -105,9 +105,9 @@ async function loadCend(fetchImpl, options = {}) {
     clearInterval() {},
     console: { log() {}, warn() {}, error: (...args) => errors.push(args) },
     scrollTo() {},
-    A380OAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
-    A380_DATA: { services: [], venues: { ktv: { address: 'OpenChat KTV', tags: [] } } },
-    __A380_TEST__: {},
+    SaasOAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
+    Saas_DATA: { services: [], venues: { ktv: { address: 'SaaS KTV', tags: [] } } },
+    __Saas_TEST__: {},
     document: documentStub,
     addEventListener(type, handler) { (listeners[type] = listeners[type] || []).push(handler) },
   }
@@ -121,14 +121,14 @@ async function loadCend(fetchImpl, options = {}) {
     vm.runInContext(sources[name], sandbox, { filename: name })
   }
   // 测试专用出口：产品代码本身不导出，这里只把函数声明挂到桩上，行为与浏览器完全一致。
-  vm.runInContext(sources['app.js'] + '\n;__A380_TEST__.render = render;'
-    + '__A380_TEST__.refreshVisibleView = refreshVisibleView;\n', sandbox, { filename: 'app.js' })
+  vm.runInContext(sources['app.js'] + '\n;__Saas_TEST__.render = render;'
+    + '__Saas_TEST__.refreshVisibleView = refreshVisibleView;\n', sandbox, { filename: 'app.js' })
   sandbox.SAAS.activate()
   sandbox.SAAS.setCurrency('CNY')
 
   return {
     sandbox,
-    api: sandbox.__A380_TEST__,
+    api: sandbox.__Saas_TEST__,
     app: appEl,
     errors,
     intervals,
@@ -208,7 +208,7 @@ test('源码守卫：静默刷新带路由守卫，钱 / 状态视图走同一�
     const at = source.indexOf(marker)
     expect(at, marker + ' 未找到').toBeGreaterThan(0)
     const body = source.slice(at, source.indexOf('\n}', at))
-    expect(body).toContain('A380PageLoad.refreshPage')
+    expect(body).toContain('SaasPageLoad.refreshPage')
     expect(body).toContain('routeIsCurrent(route)')
   }
   expect(source).toContain('load: loadMyOrders,')
@@ -224,7 +224,7 @@ test('源码守卫：静默刷新不挂加载态 / 失败不替换屏上数据�
 
   const at = pageLoad.indexOf('async function refreshPage(options)')
   expect(at).toBeGreaterThan(0)
-  const body = pageLoad.slice(at, pageLoad.indexOf('root.A380PageLoad = {'))
+  const body = pageLoad.slice(at, pageLoad.indexOf('root.SaasPageLoad = {'))
   expect(body).not.toContain('loadingHtml')   // 屏上已有数据：不闪加载态
   expect(body).not.toContain('errorHtml')     // 失败保留屏上数据：不整页替换成错误页
   expect(body).toContain('if (!isCurrent()) return { ok: false, skipped: true };')  // 换页后连请求都不发
@@ -277,7 +277,7 @@ test('回到前台（visibilitychange）：订单列表静默重取，金额与�
     const target = String(url)
     calls.push(target)
     if (target.includes(ORDERS_URL)) return json([current])
-    if (target.includes('/api/v1/admin/tenant/config')) return json({})
+    if (target.includes('/api/v1/business/tenant/config')) return json({})
     return json({})
   })
 
@@ -343,7 +343,7 @@ test('回到前台（visibilitychange）：钱包明细页静默重取余额与�
     calls.push(target)
     if (target.includes('/api/v1/me/wallet/ledger')) return json(ledger)
     if (target.includes('/api/v1/me/wallet')) return json(wallet)
-    if (target.includes('/api/v1/admin/tenant/config')) return json({})
+    if (target.includes('/api/v1/business/tenant/config')) return json({})
     return json({})
   })
 

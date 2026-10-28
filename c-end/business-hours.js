@@ -1,5 +1,5 @@
 /**
- * C 端营业时间工具（原生 JS，挂 window.A380BusinessHours；与 datetime.js/money.js 同一 IIFE 加载方式，可被 vitest 直接加载）。
+ * C 端营业时间工具（原生 JS，挂 window.SaasBusinessHours；与 datetime.js/money.js 同一 IIFE 加载方式，可被 vitest 直接加载）。
  *
  * 服务端只读接口：GET /api/v1/business/reservations/business-hours
  *   → 200 { storeId, openTime: '18:00', closeTime: '05:00', source: 'DEFAULT',
@@ -108,7 +108,7 @@
     return normalized.openTime + ' – ' + (normalized.crossesMidnight ? '次日 ' : '') + normalized.closeTime;
   }
 
-  root.A380BusinessHours = {
+  root.SaasBusinessHours = {
     DEFAULT_BUSINESS_HOURS: DEFAULT_BUSINESS_HOURS,
     parseBusinessHours: parseBusinessHours,
     isWithinBusinessHours: isWithinBusinessHours,

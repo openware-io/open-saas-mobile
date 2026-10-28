@@ -18,7 +18,7 @@ async function loadBusinessHours() {
   const source = await readFile(new URL('./business-hours.js', import.meta.url), 'utf8')
   const window = {}
   vm.runInNewContext(source, { window })
-  return window.A380BusinessHours
+  return window.SaasBusinessHours
 }
 
 /** 营业时段字面量（不依赖模块自身，避免循环自证）。 */
@@ -28,7 +28,7 @@ const allDay = { openTime: '00:00', closeTime: '00:00', crossesMidnight: false, 
 
 /**
  * 在 live 模式加载 money.js + business-hours.js + saas.js（index.html 同一顺序），fetch 可控。
- * saas.js 的营业时间兜底读的是 window.A380BusinessHours，所以模块必须真的先加载。
+ * saas.js 的营业时间兜底读的是 window.SaasBusinessHours，所以模块必须真的先加载。
  */
 async function loadSaas(fetch) {
   const moneySource = await readFile(new URL('./money.js', import.meta.url), 'utf8')
@@ -36,7 +36,7 @@ async function loadSaas(fetch) {
   const source = await readFile(new URL('./saas.js', import.meta.url), 'utf8')
   const window = {
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
   }
   const context = { window, fetch, console, crypto: { randomUUID: () => 'request-id' } }
   vm.runInNewContext(moneySource, context)
@@ -206,7 +206,7 @@ test('demo（preview=1）降级同样返回默认营业时间，且不发请求'
   const source = await readFile(new URL('./saas.js', import.meta.url), 'utf8')
   const window = {
     location: { origin: 'http://localhost:5175', hostname: 'localhost', port: '5175', search: '?preview=1' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const fetch = vi.fn().mockRejectedValue(new Error('demo 模式不应发请求'))
@@ -235,8 +235,8 @@ test('源码守卫：app.js 走 isWithinBusinessHours，index.html 在 app 之�
   expect(code).not.toMatch(/\|\|\s*\w+\s*<\s*close/)
   expect(code).not.toContain('次日 ')
   // 同一个 IIFE 模块也只暴露这几个入口（判定实现只有一份）
-  expect(code).toContain('A380BusinessHours.isWithinBusinessHours(')
-  expect(code).toContain('A380BusinessHours.parseBusinessHours(')
+  expect(code).toContain('SaasBusinessHours.isWithinBusinessHours(')
+  expect(code).toContain('SaasBusinessHours.parseBusinessHours(')
 
   const html = await readFile(new URL('./index.html', import.meta.url), 'utf8')
   const order = [...html.matchAll(/src="\.\/([\w.-]+)\.js(?:\?[^"]*)?"/g)].map((match) => match[1])

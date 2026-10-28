@@ -7,7 +7,7 @@
 一键部署完成后，Ingress 默认监听 `30080`。假设部署机地址为 `<Kind主机IP>`：
 
 ```text
-C 端：http://<Kind主机IP>:30080/a380/
+C 端：http://<Kind主机IP>:30080/saas/
 B 端：http://<Kind主机IP>:30080/b/
 ```
 
@@ -21,7 +21,7 @@ B 端：http://<Kind主机IP>:30080/b/
 
 局域网设备可直接使用：
 
-- C 端：`http://<Kind主机IP>:30080/a380/`
+- C 端：`http://<Kind主机IP>:30080/saas/`
 - B 端：`http://<Kind主机IP>:30080/b/`；首次进入按账号可访问门店选择运营门店。
 
 未开启放权的环境（例如正式包）会静默回退正常 OAuth；普通 HTTP 内网地址下页面会提示需要 HTTPS 或从 IM App 进入。不要直接访问集群内部端口。

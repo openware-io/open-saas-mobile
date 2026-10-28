@@ -1,9 +1,9 @@
 <template>
   <div class="page">
-    <header v-if="state === 'authed'" class="topbar" aria-label="OpenChat后台">
+    <header v-if="state === 'authed'" class="topbar" aria-label="SaaS后台">
       <span class="brand-mark">OC</span>
-      <span class="brand-copy"><strong>OpenChat 商户工作台</strong><small>经营数据与订单履约</small></span>
-      <span v-if="activeContext" class="context-pill" title="OpenChat租户">{{ activeContext.storeName || activeContext.organizationName || '全部门店' }}</span>
+      <span class="brand-copy"><strong>SaaS 商户工作台</strong><small>经营数据与订单履约</small></span>
+      <span v-if="activeContext" class="context-pill" title="SaaS租户">{{ activeContext.storeName || activeContext.organizationName || '全部门店' }}</span>
     </header>
 
     <main class="content">
@@ -30,10 +30,13 @@
     </main>
 
     <nav v-if="state === 'authed'" class="tabbar">
-      <router-link to="/reservations" class="tab" active-class="active">
+      <router-link v-if="isHotel" to="/hotel" class="tab" active-class="active">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V4h10v17M14 9h6v12M7 8h4M7 12h4M7 16h4M17 13h1M17 17h1"/></svg><span>酒店前台</span>
+      </router-link>
+      <router-link v-else to="/reservations" class="tab" active-class="active">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z"/><path d="m8 14 2 2 5-5"/></svg><span>预约</span>
       </router-link>
-      <router-link to="/orders" class="tab" active-class="active">
+      <router-link v-if="!isHotel" to="/orders" class="tab" active-class="active">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2V3Z"/><path d="M9 8h6M9 12h6"/></svg><span>订单</span>
       </router-link>
     </nav>
@@ -41,14 +44,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted, provide } from 'vue'
+import { computed, ref, onMounted, provide } from 'vue'
+import { useRouter } from 'vue-router'
 import { ensureOperatorAuth } from '@/b-end/oauth'
 
 const state = ref('loading')
 const errorTitle = ref('暂未开通运营权限')
-const errorDescription = ref('你当前使用的 IM 账号尚未开通 OpenChat 商户端的运营权限。')
+const errorDescription = ref('你当前使用的 IM 账号尚未开通 SaaS 商户端的运营权限。')
 const availableContexts = ref([])
 const activeContext = ref(null)
+const router = useRouter()
+const isHotel = computed(() => activeContext.value?.businessType === 'HOTEL')
 provide('activeContext', activeContext)
 
 async function auth(force = false, contextId = null) {
@@ -58,26 +64,28 @@ async function auth(force = false, contextId = null) {
     const selected = await ensureOperatorAuth({ force, contextId })
     activeContext.value = selected || null
     state.value = selected ? 'authed' : 'loading' // null = 正在跳转授权
+    if (selected?.businessType === 'HOTEL') await router.replace('/hotel')
+    else if (router.currentRoute.value.path === '/hotel') await router.replace('/reservations')
   } catch (e) {
     if (e?.code === 'NO_OPERATOR_ROLE') {
       errorTitle.value = '尚未开通运营权限'
-      errorDescription.value = '当前 IM 账号已完成登录，但还没有 OpenChat 商户端的运营角色。'
+      errorDescription.value = '当前 IM 账号已完成登录，但还没有 SaaS 商户端的运营角色。'
     } else if (e?.code === 'IM_SESSION_EXPIRED') {
       errorTitle.value = 'IM 登录已失效'
-      errorDescription.value = '请返回 IM 重新登录后，再进入 OpenChat后台。'
+      errorDescription.value = '请返回 IM 重新登录后，再进入 SaaS后台。'
     } else if (e?.code === 'IM_BRIDGE_AUTH_FAILED') {
       errorTitle.value = '无法完成 IM 授权'
-      errorDescription.value = '请返回 IM 后重新进入 OpenChat后台；如持续失败请更新 IM App。'
+      errorDescription.value = '请返回 IM 后重新进入 SaaS后台；如持续失败请更新 IM App。'
     } else if (e?.code === 'CONTEXT_SELECTION_REQUIRED') {
       errorTitle.value = '请选择运营门店'
       errorDescription.value = '当前账号可访问多个门店，请选择要进入的运营门店。'
       availableContexts.value = Array.isArray(e.contexts) ? e.contexts : []
     } else if (e?.code === 'PKCE_UNAVAILABLE') {
       errorTitle.value = '当前环境不支持授权'
-      errorDescription.value = '请从已更新的 IM App 重新进入 OpenChat后台，或使用 HTTPS / localhost 地址访问。'
+      errorDescription.value = '请从已更新的 IM App 重新进入 SaaS后台，或使用 HTTPS / localhost 地址访问。'
     } else {
       // 只有带错误码的业务异常才展示原始 message；其余（网络/未知异常）用统一话术，避免把框架原文弹给运营人员。
-      console.error('[a380-b] auth failed', e)
+      console.error('[saas-b] auth failed', e)
       errorTitle.value = '授权服务暂时不可用'
       errorDescription.value = e?.code ? (e.message || '请稍后重试；如持续失败请联系管理员。')
         : '网络或授权服务异常，请稍后重试；如持续失败请联系管理员。'

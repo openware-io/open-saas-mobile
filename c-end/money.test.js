@@ -16,7 +16,7 @@ async function loadSaasInDemoMode() {
       port: '5175',
       search: '?preview=1',
     },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const context = {
@@ -50,7 +50,7 @@ test('金额尺度：最小货币单位↔主单位只走 money.js，展示统�
   // 主单位入参的同一格式（仅演示数据使用）
   expect(saas.formatYuan(368)).toBe('¥368.00')
   // 储值品牌名默认值只在 saas.js 一处定义；它是代币名，与币种符号解耦
-  expect(saas.DEFAULT_WALLET_BRAND).toBe('OpenChat币')
+  expect(saas.DEFAULT_WALLET_BRAND).toBe('SaaS 币')
 })
 
 /** mock 必须与真实契约同口径（最小货币单位）：否则「钱包余额忘了除 100」会再次被演示数据掩盖。 */

@@ -36,7 +36,7 @@ async function loadSaas(fetch) {
   const fakeConsole = { warn: (message) => warnings.push(String(message)), log: () => {}, error: () => {} }
   const window = {
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
   }
   const context = { window, fetch, console: fakeConsole, crypto: { randomUUID: () => 'request-id' } }
   vm.runInNewContext(moneySource, context)
@@ -209,7 +209,7 @@ test('C 端房型错误码全部中文化：不弹裸码 / 英文原文', async 
   const source = await readRepo('c-end/api-errors.js')
   const window = {}
   vm.runInNewContext(source, { window })
-  const describe = window.A380ApiErrors.describe
+  const describe = window.SaasApiErrors.describe
 
   for (const code of ROOM_TYPE_CODES) {
     const text = describe({ status: 400, payload: { code, message: 'Room type not available' } })
@@ -250,7 +250,7 @@ test('历史预约行（只有 resourceId 无房型）回退旧包厢名并标�
   const source = await readRepo('c-end/reservation-room.js')
   const window = {}
   vm.runInNewContext(source, { window })
-  const api = window.A380ReservationRoom
+  const api = window.SaasReservationRoom
 
   // 历史行：迁移前只有 resourceId / resourceName（预约的就是具体包厢）
   const historical = { id: 9, resourceId: 1001, resourceName: '仙域', roomTypeId: null, roomTypeCode: null, roomTypeName: null }
@@ -272,9 +272,9 @@ test('历史预约行（只有 resourceId 无房型）回退旧包厢名并标�
 
   // 页面把回退口径接上：房型名 + 历史标注 + 包厢分配提示
   const appCode = stripComments(await readRepo('c-end/app.js'))
-  expect(appCode).toContain('A380ReservationRoom.roomTypeLabel(r, room)')
-  expect(appCode).toContain('A380ReservationRoom.allocationText(r, room)')
-  expect(appCode).toContain('A380ReservationRoom.HISTORICAL_TEXT')
+  expect(appCode).toContain('SaasReservationRoom.roomTypeLabel(r, room)')
+  expect(appCode).toContain('SaasReservationRoom.allocationText(r, room)')
+  expect(appCode).toContain('SaasReservationRoom.HISTORICAL_TEXT')
   // 预约列表按房型取价（历史行才按旧包厢取价）
   expect(appCode).toContain('items.map(reservationPricingRef)')
   // 历史行能从房态反查到房型时，取价也走房型（与房型列表/确认页同口径）

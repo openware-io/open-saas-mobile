@@ -7,7 +7,7 @@ import { expect, test, vi } from 'vitest'
  *
  * 现象：我的消费 → 加服务项 → 页面永远停在「加载中…」。
  * 真因（两层）：
- *   1) 接口失败：C 端消费者会话（appId=saas-a380-c）的权限快照来自
+ *   1) 接口失败：C 端消费者会话（appId=saas-c）的权限快照来自
  *      iam_consumer_application.permissions_json，只有 reservation.view / reservation.create；
  *      而 `GET /api/v1/business/orders/{id}/items` 要求商户权限码 order.view
  *      （open-im-server OrderItemController#listItems），于是回 403 PERMISSION_DENIED。
@@ -75,7 +75,7 @@ async function loadCend(fetchImpl, options = {}) {
   const listeners = {}
   const errors = []
   const sandbox = {
-    // window 必须与全局同物：脚本里 window.A380X 与裸标识符 A380X 是同一份（浏览器语义）
+    // window 必须与全局同物：脚本里 window.SaasX 与裸标识符 SaasX 是同一份（浏览器语义）
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com', hash: '#/home', port: '' },
     fetch: fetchImpl,
     crypto: { randomUUID: () => 'request-id' },
@@ -84,9 +84,9 @@ async function loadCend(fetchImpl, options = {}) {
     setTimeout, clearTimeout, setInterval, clearInterval,
     console: { log() {}, warn() {}, error: (...args) => errors.push(args) },
     scrollTo() {},
-    A380OAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
-    A380_DATA: { services: [], venues: { ktv: { address: 'OpenChat KTV', tags: [] } } },
-    __A380_TEST__: {},
+    SaasOAuth: { ready: new Promise(() => {}), refreshContext: async () => {} },
+    Saas_DATA: { services: [], venues: { ktv: { address: 'SaaS KTV', tags: [] } } },
+    __Saas_TEST__: {},
     document: {
       querySelector(selector) {
         if (selector === '#app') return appEl
@@ -110,17 +110,17 @@ async function loadCend(fetchImpl, options = {}) {
     vm.runInContext(sources[name], sandbox, { filename: name })
   }
   // 测试专用出口：产品代码本身不导出，这里只把函数声明挂到桩上，行为与浏览器完全一致。
-  vm.runInContext(sources['app.js'] + '\n;__A380_TEST__.render = render;'
-    + '__A380_TEST__.renderOrderItems = renderOrderItems;'
-    + '__A380_TEST__.renderMyOrders = renderMyOrders;'
-    + '__A380_TEST__.renderMyReservations = renderMyReservations;'
-    + '__A380_TEST__.paintOrderBill = paintOrderBill;\n', sandbox, { filename: 'app.js' })
+  vm.runInContext(sources['app.js'] + '\n;__Saas_TEST__.render = render;'
+    + '__Saas_TEST__.renderOrderItems = renderOrderItems;'
+    + '__Saas_TEST__.renderMyOrders = renderMyOrders;'
+    + '__Saas_TEST__.renderMyReservations = renderMyReservations;'
+    + '__Saas_TEST__.paintOrderBill = paintOrderBill;\n', sandbox, { filename: 'app.js' })
   sandbox.SAAS.activate()
   sandbox.SAAS.setCurrency('CNY')
 
   return {
     sandbox,
-    api: sandbox.__A380_TEST__,
+    api: sandbox.__Saas_TEST__,
     app: appEl,
     toast: toastEl,
     errors,
@@ -155,13 +155,13 @@ test('加载态与错误态是导出函数：错误态带重试按钮、绝不�
   vm.runInNewContext(await repoFile('api-errors.js'), { window })
   vm.runInNewContext(await repoFile('page-load.js'), { window })
 
-  const loading = window.A380PageLoad.loadingHtml('加载中…')
+  const loading = window.SaasPageLoad.loadingHtml('加载中…')
   expect(loading).toContain('加载中…')
   expect(loading).toContain('item-list')
 
   const denied = Object.assign(new Error('HTTP 403 {"code":"PERMISSION_DENIED","message":"缺少权限: order.view"}'),
     { status: 403, code: 'PERMISSION_DENIED' })
-  const html = window.A380PageLoad.errorHtml('加项列表加载失败', denied, 'order-items/9')
+  const html = window.SaasPageLoad.errorHtml('加项列表加载失败', denied, 'order-items/9')
   expect(html).toContain('加项列表加载失败')
   expect(html).toContain('没有操作权限')          // 403 翻成中文可执行提示（api-errors.js）
   expect(html).not.toContain('PERMISSION_DENIED') // 不把错误码直出页面
@@ -169,16 +169,16 @@ test('加载态与错误态是导出函数：错误态带重试按钮、绝不�
   expect(html).toContain('重试')
   expect(html).not.toContain('加载中')
   // 超时错误码同样有中文文案
-  const timeout = window.A380PageLoad.timeoutError(15000)
-  expect(window.A380ApiErrors.describe(timeout)).toContain('请求超时')
+  const timeout = window.SaasPageLoad.timeoutError(15000)
+  expect(window.SaasApiErrors.describe(timeout)).toContain('请求超时')
   // 没有可重试入口时不出按钮（避免出现点了没反应的控件）
-  expect(window.A380PageLoad.errorHtml('加载失败', denied)).not.toContain('data-retry')
+  expect(window.SaasPageLoad.errorHtml('加载失败', denied)).not.toContain('data-retry')
 })
 
 test('renderPage：load 抛错 / 超时都把已挂载的加载态替换成错误态', async () => {
   const window = { console: { error() {} } }
   vm.runInNewContext(await repoFile('page-load.js'), { window, setTimeout, clearTimeout })
-  const { renderPage, loadingHtml } = window.A380PageLoad
+  const { renderPage, loadingHtml } = window.SaasPageLoad
 
   const mounted = []
   const mount = (html) => mounted.push(html)
@@ -215,7 +215,7 @@ test('renderPage：load 抛错 / 超时都把已挂载的加载态替换成错�
     mount, load: async () => [{ id: 1 }], render: (value) => mounted.push('OK:' + value[0].id),
   })
   expect(outcome).toEqual({ ok: true, value: [{ id: 1 }] })
-  expect(mounted).toEqual([window.A380PageLoad.loadingHtml(), 'OK:1'])
+  expect(mounted).toEqual([window.SaasPageLoad.loadingHtml(), 'OK:1'])
 })
 
 // —— ② renderOrderItems：接口失败一律错误态，绝不「一直加载中」 ——
@@ -413,7 +413,7 @@ test('saas.js：请求超时可注入（REQUEST_TIMEOUT / 504），请求路径�
   {
     const window = {
       location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-      A380OAuth: { refreshContext: vi.fn() },
+      SaasOAuth: { refreshContext: vi.fn() },
       SAAS_REQUEST_TIMEOUT_MS: 20,
     }
     const context = { window, fetch: () => new Promise(() => {}), setTimeout, clearTimeout,
@@ -432,7 +432,7 @@ test('saas.js：请求超时可注入（REQUEST_TIMEOUT / 504），请求路径�
     const calls = []
     const window = {
       location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-      A380OAuth: { refreshContext: vi.fn() },
+      SaasOAuth: { refreshContext: vi.fn() },
     }
     const context = {
       window,
@@ -457,7 +457,7 @@ test('saas.js：请求超时可注入（REQUEST_TIMEOUT / 504），请求路径�
 
 // —— 源码守卫：页面确实接上了加载守卫，且不再手写「加载中…」——
 
-test('源码守卫：我的消费相关渲染函数统一走 A380PageLoad，入口先加载 page-load.js', async () => {
+test('源码守卫：我的消费相关渲染函数统一走 SaasPageLoad，入口先加载 page-load.js', async () => {
   const source = await readFile(new URL('./app.js', import.meta.url), 'utf8')
   /** 取某个函数声明到「下一个函数声明 / 下一段块注释」之间的正文（不含函数外的说明注释）。 */
   const bodyOf = (marker) => {
@@ -468,7 +468,7 @@ test('源码守卫：我的消费相关渲染函数统一走 A380PageLoad，入�
   }
 
   const orderItems = bodyOf('async function renderOrderItems')
-  expect(orderItems).toContain('A380PageLoad.renderPage')
+  expect(orderItems).toContain('SaasPageLoad.renderPage')
   expect(orderItems).toContain('retryRoute')
   expect(orderItems).not.toContain('加载中')      // 加载态只能由 page-load.js 出
   // 两个 await 都收进 load（守卫统一兜底），不再裸放在页面函数里
@@ -477,17 +477,17 @@ test('源码守卫：我的消费相关渲染函数统一走 A380PageLoad，入�
   expect(orderItems).toContain('await SAAS.listCatalog({})')
 
   const myOrders = bodyOf('async function renderMyOrders')
-  expect(myOrders).toContain('A380PageLoad.renderPage')
+  expect(myOrders).toContain('SaasPageLoad.renderPage')
   expect(myOrders).not.toContain('加载中')
 
   const myReservations = bodyOf('async function renderMyReservations')
-  expect(myReservations).toContain('A380PageLoad.renderPage')
+  expect(myReservations).toContain('SaasPageLoad.renderPage')
   expect(myReservations).not.toContain('加载中')
 
   // 账单失败态也用同一份错误态（带重试），不再依赖 .item-list 一定存在
   const bill = bodyOf('async function renderOrderBill')
-  expect(bill).toContain("A380PageLoad.errorHtml('账单加载失败'")
-  expect(bill).toContain('A380PageLoad.loadingHtml')
+  expect(bill).toContain("SaasPageLoad.errorHtml('账单加载失败'")
+  expect(bill).toContain('SaasPageLoad.loadingHtml')
 
   // 重试按钮的点击委托（同一路由重试不会被 hashchange 触发）
   expect(source).toContain("event.target.closest('[data-retry]')")

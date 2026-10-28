@@ -17,7 +17,7 @@ function bEndDevEntry() {
   }
 }
 
-// B 端「A380 商户端」构建目标 → dist-b（部署 /b/）
+// B 端「Saas 商户端」构建目标 → dist-b（部署 /b/）
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const previewAliases = mode === 'preview' ? [

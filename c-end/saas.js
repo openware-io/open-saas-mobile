@@ -77,7 +77,7 @@
       'Content-Type': 'application/json',
       'Accept-Language': 'zh',
       // 声明所处应用族：网关据此选用 C 端会话；否则同浏览器内与运营后台的 B 端会话可能串号。
-      'X-Saas-App': 'saas-a380-c'
+      'X-Saas-App': 'saas-c'
     };
     if (contract) h['X-Client-Contract'] = contract;
     if (write) {
@@ -89,7 +89,7 @@
 
   async function ensureCsrfToken() {
     if (csrfToken) return csrfToken;
-    var response = await fetchWithTimeout('/api/v1/auth/csrf?appId=saas-a380-c',
+    var response = await fetchWithTimeout('/api/v1/auth/csrf?appId=saas-c',
       { credentials: 'same-origin' }, requestTimeoutMs());
     if (!response.ok) throw new Error('无法获取 CSRF token');
     var payload = await response.json();
@@ -129,13 +129,13 @@
         body: body ? JSON.stringify(body) : undefined
       }, requestTimeoutMs());
       // 网关 X-Currency 兜底：老接口响应体不带 currencyCode 时也能对齐全站符号（不覆盖已选币种）
-      if (window.A380Money && typeof window.A380Money.applyResponseCurrency === 'function') {
-        window.A380Money.applyResponseCurrency(null, resp);
+      if (window.SaasMoney && typeof window.SaasMoney.applyResponseCurrency === 'function') {
+        window.SaasMoney.applyResponseCurrency(null, resp);
       }
       if (resp.status === 401 && !retriedAfterContextRefresh
-          && window.A380OAuth && typeof window.A380OAuth.refreshContext === 'function') {
+          && window.SaasOAuth && typeof window.SaasOAuth.refreshContext === 'function') {
         retriedAfterContextRefresh = true;
-        await window.A380OAuth.refreshContext();
+        await window.SaasOAuth.refreshContext();
         continue;
       }
       if (!resp.ok) {
@@ -171,17 +171,17 @@
 
   /** 默认营业时间（18:00–次日 05:00）的新副本：唯一口径在 business-hours.js，这里只做转发。 */
   function defaultBusinessHours() {
-    var api = window.A380BusinessHours;
+    var api = window.SaasBusinessHours;
     // business-hours.js 未加载时也绝不返回 null：预约时间的默认值必须有可用的开门时刻
     if (!api || typeof api.parseBusinessHours !== 'function') return { openTime: '18:00', closeTime: '05:00' };
     return api.parseBusinessHours(api.DEFAULT_BUSINESS_HOURS);
   }
 
   // —— 金额口径：后端金额一律最小货币单位（cst_wallet_account.available_amount / ord_*_item.amount 等），
-  //    展示唯一入口是 window.A380Money（c-end/money.js）。本文件只做转发：币种字典、÷/× 最小单位
+  //    展示唯一入口是 window.SaasMoney（c-end/money.js）。本文件只做转发：币种字典、÷/× 最小单位
   //    的换算都只允许在 money.js 内部，页面与接口层都不得再散落 /100、*100 或自建符号表。——
   function money() {
-    var api = window.A380Money;
+    var api = window.SaasMoney;
     if (!api) throw new Error('money.js 未加载：C 端金额展示唯一入口缺失');
     return api;
   }
@@ -341,7 +341,7 @@
   var MOCK_POINTS = { balance: '12680' };
 
   /** 储值品牌展示名的默认值；真实展示名一律取租户配置 tnt_tenant_config.wallet_brand_name。 */
-  var DEFAULT_WALLET_BRAND = 'OpenChat币';
+  var DEFAULT_WALLET_BRAND = 'SaaS 币';
 
   /** 租户储值配置（品牌名 + 代币比例）全站只读一次：钱包、账本与页面共用同一份，避免同页多次请求。 */
   var walletTokenConfigRequest = null;
@@ -368,7 +368,7 @@
   function ensureWalletTokenConfig() {
     if (!walletTokenConfigRequest) {
       var loading = live
-        ? request('GET', '/api/v1/admin/tenant/config').then(function (data) {
+        ? request('GET', '/api/v1/business/tenant/config').then(function (data) {
             return normalizeWalletTokenConfig(unwrap(data));
           })
         : Promise.resolve(defaultWalletTokenConfig());
@@ -859,7 +859,7 @@
 
   /**
    * 房型列表 = 后台房型字典 GET /api/v1/admin/resources/types（字段 id / code / name / capacity / status）。
-   * 该接口虽是后台路径，C 端会话（appId=saas-a380-c）已可直接读取（联调实测 200，见提交说明）；
+   * 该接口虽是后台路径，C 端会话（appId=saas-c）已可直接读取（联调实测 200，见提交说明）；
    * 读不到时按既有降级：用 /business/resources 的资源列表按房型归并（绝不拿包厢号当房型）。
    */
   async function listKtvRoomTypes() {
@@ -1043,10 +1043,10 @@
     /** 创建预约：预约按房型（roomTypeId）创建，**不得传具体包厢 resourceId**（服务端 400 拒绝）。 */
     async createReservation(payload) {
       try {
-        if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'OpenChat' + String(Date.now()).slice(-10), status: 'PENDING' }; });
+        if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; });
         return unwrap(await request('POST', '/api/v1/business/reservations', payload));
       } catch (e) {
-        return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'OpenChat' + String(Date.now()).slice(-10), status: 'PENDING' }; }, e);
+        return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; }, e);
       }
     },
 
@@ -1090,7 +1090,7 @@
     },
 
     /**
-     * 钱包账本（OpenChat币明细）：GET /api/v1/me/wallet/ledger。
+     * 钱包账本（SaaS 币明细）：GET /api/v1/me/wallet/ledger。
      * 每行按数量口径补齐 `tokenAmount`；行内 amount / currencyCode 保留用于对账。
      */
     async getWalletLedger() {
@@ -1231,7 +1231,7 @@
     },
 
     /**
-     * 租户储值展示名与比例（wallet_brand_name / wallet_ratio，默认 OpenChat币 / 100）。
+     * 租户储值展示名与比例（wallet_brand_name / wallet_ratio，默认 SaaS 币 / 100）。
      * 服务端按签名上下文取租户，客户端不传 tenantId，也不硬编码品牌名；全站只读一次并缓存。
      */
     async getWalletTokenConfig() {

@@ -1,5 +1,5 @@
 /**
- * C 端金额展示唯一入口（window.A380Money）。
+ * C 端金额展示唯一入口（window.SaasMoney）。
  *
  * 币种是**租户级唯一来源**：`POST /api/v1/auth/context/select` 响应体的 `currencyCode`（缺省 USD）；
  * 网关 `X-Currency` 头只作旧接口兜底（见 oauth.js / saas.js）。切币种**不做汇率换算**：
@@ -13,7 +13,7 @@
  *    货币名称取 label（人民币 / 美元），不向用户展示裸 'CNY' 码。
  *  - 未知币种回退**当前**币种并 console.warn，不抛错（不得整页报错）；
  *    已结算单据自带 currencyCode 时以记录为准（快照优先，§5）。
- *  - **储值币（OpenChat币）与积分不是货币**：它们是组合支付里的一种支付工具，界面只显示**数量**，
+ *  - **储值币（SaaS 币）与积分不是货币**：它们是组合支付里的一种支付工具，界面只显示**数量**，
  *    不带货币符号与币种；`formatTokens` / `formatPoints` 是唯一展示入口，禁止对它们调用 formatMoney。
  */
 (function (root) {
@@ -27,7 +27,7 @@
   var SUPPORTED_CURRENCIES = ['CNY', 'USD'];
   /** 租户未配置时的默认币种：规范 §1 定为 USD。 */
   var DEFAULT_CURRENCY = 'USD';
-  var STORAGE_KEY = 'a380-c-currency';
+  var STORAGE_KEY = 'saas-c-currency';
   var CHANGE_EVENT = 'currency-changed';
 
   function storage() {
@@ -350,7 +350,7 @@
     return key ? headers[key] : null;
   }
 
-  root.A380Money = {
+  root.SaasMoney = {
     CURRENCY_DEFINITIONS: CURRENCY_DEFINITIONS,
     SUPPORTED_CURRENCIES: SUPPORTED_CURRENCIES,
     DEFAULT_CURRENCY: DEFAULT_CURRENCY,

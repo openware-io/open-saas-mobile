@@ -1,5 +1,5 @@
 /**
- * 页面加载守卫（window.A380PageLoad）——C 端「加载型页面」的唯一出口。
+ * 页面加载守卫（window.SaasPageLoad）——C 端「加载型页面」的唯一出口。
  *
  * 背景（线上缺陷）：`renderOrderItems` 先渲染「加载中…」，再 `await` 两个接口，最后整页替换。
  * 只要其中任意一次 await 抛错（例如 C 端会话缺 `order.view` 时接口回 403、网关 503、
@@ -67,8 +67,8 @@
 
   /** 后端错误 -> 中文可执行提示；api-errors.js 未加载时也不返回空串。 */
   function errorText(error, fallback) {
-    if (root.A380ApiErrors && typeof root.A380ApiErrors.describe === 'function') {
-      return root.A380ApiErrors.describe(error, fallback);
+    if (root.SaasApiErrors && typeof root.SaasApiErrors.describe === 'function') {
+      return root.SaasApiErrors.describe(error, fallback);
     }
     return fallback || '操作未完成，请稍后重试。';
   }
@@ -126,7 +126,7 @@
     } catch (error) {
       // 失败必须可在控制台定位：页面已经出了错误态，日志补上原始错误与页面名。
       if (root.console && typeof root.console.error === 'function') {
-        root.console.error('[a380] page load failed:', options.name || '', error);
+        root.console.error('[saas] page load failed:', options.name || '', error);
       }
       // 用户已经换页：错误态同样不能落到别的页面上（否则「点了走开」会看到上一页的报错）。
       if (!isCurrent()) return { ok: false, stale: true, error: error };
@@ -165,14 +165,14 @@
       return { ok: true, value: value };
     } catch (error) {
       if (root.console && typeof root.console.error === 'function') {
-        root.console.error('[a380] page refresh failed:', options.name || '', error);
+        root.console.error('[saas] page refresh failed:', options.name || '', error);
       }
       if (isCurrent() && typeof options.onError === 'function') options.onError(error);
       return { ok: false, error: error };
     }
   }
 
-  root.A380PageLoad = {
+  root.SaasPageLoad = {
     DEFAULT_TIMEOUT_MS: DEFAULT_TIMEOUT_MS,
     timeoutMs: timeoutMs,
     timeoutError: timeoutError,

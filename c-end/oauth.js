@@ -1,14 +1,16 @@
 /**
- * C 端（OpenChat 更多服务）OAuth 客户端：标准接入流程（PKCE + 授权码 + 服务端会话 + 上下文选择）。
+ * C 端（SaaS 生活服务）OAuth 客户端：标准接入流程（PKCE + 授权码 + 服务端会话 + 上下文选择）。
  * 链路：未授权 -> IM /oauth/authorize -> 回调 ?code -> POST /identity/oauth/im/callback（服务端换 token+绑定）
  *        -> GET /auth/contexts -> POST /auth/context/select -> 激活同源 Cookie 会话。
- * 不改 open-chat-app：入口由 IM 后台「服务板块」登记服务项(link 指向 /a380/)，跳转+授权走 IM 开放平台。
+ * 不改 open-chat-app：入口由 IM 后台「服务板块」登记服务项(link 指向 /saas/)，跳转+授权走 IM 开放平台。
  * C 端为消费者身份，不做运营角色校验（B 端 /b/ 才校验 B_OPERATOR_ROLES）。
  */
 (function () {
   'use strict';
 
-  var APP_ID = 'saas-a380-c';
+  // App identity is configurable; the legacy default is kept for old links.
+  // Tenant and path must not participate in appId.
+  var APP_ID = window.SAAS_APP_ID || 'saas-c';
   var REDIRECT_URI = window.location.origin + window.location.pathname;
 
   var PKCE_KEY = 'saas_c_pkce_verifier';
@@ -140,7 +142,7 @@
       return true;
     } catch (e) {
       // 服务端未开启调试放权（生产/未配置）时必须静默回退正常 OAuth，不能因此中断进入流程。
-      console.warn('[a380-oauth] dev session unavailable, fallback to oauth:', e && e.message);
+      console.warn('[saas-oauth] dev session unavailable, fallback to oauth:', e && e.message);
       return false;
     }
   }
@@ -195,8 +197,8 @@
    * 响应体不带该字段时用网关 X-Currency 头兜底（money.js 内部落地并触发页面重渲染）。
    */
   function applyCurrency(payload, response) {
-    if (window.A380Money && typeof window.A380Money.applyResponseCurrency === 'function') {
-      window.A380Money.applyResponseCurrency(payload, response);
+    if (window.SaasMoney && typeof window.SaasMoney.applyResponseCurrency === 'function') {
+      window.SaasMoney.applyResponseCurrency(payload, response);
     }
   }
 
@@ -208,7 +210,7 @@
         var suffix = attempt === 0 ? '' : '&refresh=' + Date.now();
         var ctx = await get('/api/v1/auth/contexts?appId=' + APP_ID + suffix);
         var list = Array.isArray(ctx) ? ctx : (ctx && ctx.items) || [];
-        var first = window.A380Context && window.A380Context.chooseSingle(list);
+        var first = window.SaasContext && window.SaasContext.chooseSingle(list);
         if (!first) {
           var noContext = new Error(list.length > 1 ? 'CONTEXT_SELECTION_REQUIRED' : 'NO_CONSUMER_ACCESS');
           noContext.code = list.length > 1 ? 'CONTEXT_SELECTION_REQUIRED' : 'NO_CONSUMER_ACCESS';
@@ -269,6 +271,27 @@
     return oauthError('IM_BRIDGE_AUTH_FAILED', 'IM bridge authorization failed');
   }
 
+  /**
+   * SaaS C 端独立登录：手机号/邮箱 + 密码。
+   * 先换 identity access token，再用该 token 建立绑定 appId 的 C 会话。
+   */
+  async function loginWithPassword(loginType, loginIdentifier, credential) {
+    var login = await req('/api/v1/identity/login', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ loginType: loginType, loginIdentifier: loginIdentifier, credential: credential }),
+    });
+    if (!login || !login.accessToken) throw oauthError('LOGIN_FAILED', '登录失败');
+    var session = await req('/api/v1/auth/session?appId=' + APP_ID, {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'Authorization': 'Bearer ' + login.accessToken },
+    });
+    if (!session || !session.authenticated) throw oauthError('LOGIN_FAILED', '登录失败');
+    clearCsrfToken();
+    await selectContext();
+    activateLive();
+    return session;
+  }
+
   async function ensureAuth() {
     if (isUiPreview()) {
       window.SAAS_DEMO_MODE = true;
@@ -291,13 +314,13 @@
       }
     }
 
-    // 首选：App 原生桥出授权码
-    try { await authorizeViaBridge(); }
+    // 首选：App 原生桥出授权码；非 App 环境不要白等 6 秒，直接显示独立登录页。
+    try { if (hasNativeBridge()) await authorizeViaBridge(); }
     catch (e) {
       // App 容器已提供桥时，裸跳 /oauth/authorize 不会携带 IM JWT，
       // 只能得到网关的 401 JSON。保留错误给页面展示并让用户重新登录 IM。
       if (hasNativeBridge()) throw nativeBridgeAuthorizationError(e);
-      console.warn('[a380-oauth] bridge unavailable, fallback redirect:', e && e.message);
+      console.warn('[saas-oauth] bridge unavailable, fallback redirect:', e && e.message);
     }
 
     session = await getSession();
@@ -307,7 +330,8 @@
       return;
     }
 
-    // 回退：非 IM App 环境（如浏览器）走 URL 重定向授权
+    // 非 IM App 环境不自动裸跳 /oauth/authorize（拿不到 IM JWT，只会 401）。
+    // 有授权码先完成回调；否则交给 C 端登录页。
     var code = takeCode();
     if (code) {
       try {
@@ -319,11 +343,11 @@
       } catch (e) {
         if (e && (e.code === 'NO_CONSUMER_ACCESS' || e.code === 'CONTEXT_SELECTION_REQUIRED'
             || e.code === 'IAM_CONTEXT_UNAVAILABLE')) throw e;
-        await startOAuth();
+        throw oauthError('LOGIN_REQUIRED', '请登录 C 端账号');
       }
       return;
     }
-    await startOAuth();
+    throw oauthError('LOGIN_REQUIRED', '请登录 C 端账号');
   }
 
   async function refreshContext() {
@@ -335,8 +359,9 @@
 
   var ready = ensureAuth();
 
-  window.A380OAuth = {
+  window.SaasOAuth = {
     APP_ID: APP_ID, REDIRECT_URI: REDIRECT_URI,
     ready: ready, startOAuth: startOAuth, ensureAuth: ensureAuth, refreshContext: refreshContext,
+    loginWithPassword: loginWithPassword,
   };
 })();

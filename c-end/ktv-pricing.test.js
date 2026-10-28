@@ -60,7 +60,7 @@ async function loadSaas(fetch) {
   const source = await readFile(new URL('./saas.js', import.meta.url), 'utf8')
   const window = {
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
   }
   const context = { window, fetch, console, crypto: { randomUUID: () => 'request-id' } }
   vm.runInNewContext(moneySource, context)

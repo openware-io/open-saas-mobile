@@ -1,5 +1,5 @@
 /**
- * C 端错误提示解析（window.A380ApiErrors）。
+ * C 端错误提示解析（window.SaasApiErrors）。
  *
  * 后端统一错误体 `{ code, message }`；币种相关错误（收款币种 ≠ 订单币种、USD 租户不支持
  * 微信/支付宝等渠道）必须在**进入渠道下单之前**就翻译成中文可执行提示，绝不把错误码或英文原文
@@ -114,7 +114,7 @@
     return fallback || '操作未完成，请稍后重试。';
   }
 
-  root.A380ApiErrors = {
+  root.SaasApiErrors = {
     describe: describe,
     codeOf: codeOf,
     messages: CODE_MESSAGES,

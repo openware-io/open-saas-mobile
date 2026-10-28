@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 
 /**
- * B 端（A380后台）金额展示唯一入口。
+ * B 端（Saas后台）金额展示唯一入口。
  *
  * 币种是**租户级唯一来源**：`POST /api/v1/auth/context/select` 响应体的 `currencyCode`（缺省 USD）；
  * 网关 `X-Currency` 头只作旧接口兜底（见 `src/shared/api/request.js`）。切币种**不做汇率换算**：
@@ -14,7 +14,7 @@ import { ref } from 'vue'
  *  - 金额一律最小货币单位（CNY 分 / USD cent）；展示统一「符号紧跟金额」（无空格，与后台 / App 三端一致），不再拼「元」；
  *    货币名称取 label（人民币 / 美元），不向用户展示裸 'CNY' 码。
  *  - 未知币种回退**当前**币种并 console.warn，不抛错；单据自带 currencyCode 时以记录为准（快照优先 §5）。
- *  - **储值币（A380币）与积分不是货币**：它们是组合支付里的一种支付工具，界面只显示**数量**，
+ *  - **储值币（SaaS 币）与积分不是货币**：它们是组合支付里的一种支付工具，界面只显示**数量**，
  *    不带货币符号与币种；`formatTokens` / `formatPoints` 是唯一展示入口，禁止对它们调用 formatMoney。
  *  - 当前币种是 Vue `ref`：模板里的 formatMoney(...) 会在渲染期订阅它，切币种后全站响应式更新。
  */
@@ -29,7 +29,7 @@ export const SUPPORTED_CURRENCIES = Object.freeze(['CNY', 'USD'])
 export const DEFAULT_CURRENCY = 'USD'
 export const CHANGE_EVENT = 'currency-changed'
 
-const STORAGE_KEY = 'a380-b-currency'
+const STORAGE_KEY = 'saas-b-currency'
 
 function storage() {
   try {

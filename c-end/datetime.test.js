@@ -11,7 +11,7 @@ async function loadDateTime() {
   const window = {}
   // 显式把宿主 Date 传进 vm，保证被测代码与被测断言看到同一个时区
   vm.runInNewContext(source, { window, Date })
-  return window.A380DateTime
+  return window.SaasDateTime
 }
 
 test('本地日期按设备时区取：本地 00:30 与 23:30 都不越界', async () => {
@@ -58,7 +58,7 @@ test('后端 LocalDateTime 按字面量展示，带时区串换算到门店时�
   expect(formatStoreDateTime(null)).toBe('—')
 })
 
-test('A380DateTime 对外暴露的日期时间 API 固定', async () => {
+test('SaasDateTime 对外暴露的日期时间 API 固定', async () => {
   const api = await loadDateTime()
   expect(Object.keys(api).sort()).toEqual(
     ['STORE_OFFSET_MINUTES', 'dateOffset', 'formatStoreDateTime', 'localDateString', 'storeOffsetDateTime'],

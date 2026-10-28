@@ -22,7 +22,7 @@ import {
 } from './src/shared/utils/money'
 
 /**
- * 储值币（A380币）/ 积分展示契约：
+ * 储值币（SaaS 币）/ 积分展示契约：
  *
  * **储值币与积分不是货币**——它们只是组合支付里的一种支付工具（储值币 / 营销币）：
  *  1) 界面只显示**数量**，**不得出现货币符号或币种**（只有现金与价格才带货币单位，现金默认 USD）；
@@ -43,12 +43,12 @@ function stripComments(source) {
   return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 }
 
-/** 只加载 c-end/money.js（window.A380Money），断言 C 端口径。 */
+/** 只加载 c-end/money.js（window.SaasMoney），断言 C 端口径。 */
 async function loadCEndMoney() {
   const source = await readRepo('c-end/money.js')
   const window = { console: { warn: () => {}, log: () => {}, error: () => {} }, sessionStorage: null }
   vm.runInNewContext(source, { window, console: window.console })
-  return window.A380Money
+  return window.SaasMoney
 }
 
 function jsonResponse(data) {
@@ -62,7 +62,7 @@ async function loadCEndSaas(fetch) {
   const fakeConsole = { warn: (message) => warnings.push(String(message)), log: () => {}, error: () => {} }
   const window = {
     location: { origin: 'https://admin.dev.example.com', hostname: 'admin.dev.example.com' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
   }
   const context = { window, fetch, console: fakeConsole, crypto: { randomUUID: () => 'request-id' } }
   vm.runInNewContext(moneySource, context)
@@ -76,7 +76,7 @@ async function loadCEndSaasDemo() {
   const [moneySource, source] = await Promise.all([readRepo('c-end/money.js'), readRepo('c-end/saas.js')])
   const window = {
     location: { origin: 'http://localhost:5175', hostname: 'localhost', port: '5175', search: '?preview=1' },
-    A380OAuth: { refreshContext: vi.fn() },
+    SaasOAuth: { refreshContext: vi.fn() },
     SAAS_DEMO_MODE: true,
   }
   const context = {
@@ -94,7 +94,7 @@ async function loadCEndSaasDemo() {
 /** 代币/积分展示文本里**绝不允许**出现的货币痕迹。 */
 const CURRENCY_TRACE = /[¥￥$€]|\bCNY\b|\bUSD\b|\bRMB\b|元/
 /** 代币/积分展示文本里**绝不允许**出现的单位（品牌名 / 「积分」/「个」）。 */
-const UNIT_TRACE = /欢乐币|A380币|储值币|积分|个/
+const UNIT_TRACE = /欢乐币|SaaS 币|储值币|积分|个/
 
 // —— 1. formatTokens / formatPoints：数量口径、千分位、无货币符号、无单位 ——
 
@@ -257,7 +257,7 @@ test('C 端 money.js 与 B 端 money.js 代币/积分口径逐字一致', async 
 test('服务端未发布 tokenAmount：按租户比例在前端换算（字段存在时以服务端值为准）', async () => {
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 10 })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 10 })
     if (target.includes('/me/wallet/ledger')) {
       return jsonResponse([{ entryType: 'RECHARGE', amount: '200000', occurredAt: '2026-09-01T10:00:00' }])
     }
@@ -287,7 +287,7 @@ test('服务端未发布 tokenAmount：按租户比例在前端换算（字段�
   expect(saas.formatPoints(points.balance)).toBe('12,680')
 
   // 租户配置全站只读一次（钱包 + 账本 + 显式读取共用同一份缓存）
-  const configCalls = fetch.mock.calls.filter(([url]) => String(url).includes('/admin/tenant/config'))
+  const configCalls = fetch.mock.calls.filter(([url]) => String(url).includes('/business/tenant/config'))
   expect(configCalls).toHaveLength(1)
   const config = await saas.getWalletTokenConfig()
   expect(config).toEqual({ brandName: '欢乐币', ratio: 10 })
@@ -296,16 +296,16 @@ test('服务端未发布 tokenAmount：按租户比例在前端换算（字段�
 test('服务端已发布 tokenAmount：以服务端值为准（前端不再自行换算）', async () => {
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 100 })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币', ratio: 100 })
     // 故意让前端换算结果（10000）与服务端值不同：必须取服务端值
-    return jsonResponse({ availableAmount: '10000', frozenAmount: '0', tokenAmount: '777', tokenBrandName: 'A380币' })
+    return jsonResponse({ availableAmount: '10000', frozenAmount: '0', tokenAmount: '777', tokenBrandName: 'SaaS 币' })
   })
   const { saas } = await loadCEndSaas(fetch)
 
   const wallet = await saas.getWallet()
   expect(wallet.tokenAmount).toBe('777')
   expect(wallet.tokenAmount).not.toBe('10000')
-  expect(wallet.tokenBrandName).toBe('A380币')
+  expect(wallet.tokenBrandName).toBe('SaaS 币')
   expect(saas.formatTokens(wallet.tokenAmount)).toBe('777')
 })
 
@@ -313,7 +313,7 @@ test('租户比例缺失/配置读不到：回退默认 100 且不报错（页�
   // 配置里没有 ratio（老租户配置）
   const missingRatio = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return jsonResponse({ brandName: '欢乐币' })
+    if (target.includes('/business/tenant/config')) return jsonResponse({ brandName: '欢乐币' })
     return jsonResponse({ availableAmount: '10000', frozenAmount: '0' })
   })
   const first = await loadCEndSaas(missingRatio)
@@ -324,15 +324,15 @@ test('租户比例缺失/配置读不到：回退默认 100 且不报错（页�
   // 配置接口直接失败（服务端还没上线该接口）
   const failing = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/tenant/config')) return { ok: false, status: 500, text: async () => '{"code":"BOOM"}' }
+    if (target.includes('/business/tenant/config')) return { ok: false, status: 500, text: async () => '{"code":"BOOM"}' }
     return jsonResponse({ availableAmount: '10000', frozenAmount: '0' })
   })
   const second = await loadCEndSaas(failing)
   const walletB = await second.saas.getWallet()
   expect(walletB.tokenAmount).toBe('10000')
-  expect(walletB.tokenBrandName).toBe('A380币')
+  expect(walletB.tokenBrandName).toBe('SaaS 币')
   expect(second.warnings.join('\n')).toContain('租户储值配置不可读')
-  await expect(second.saas.getWalletTokenConfig()).resolves.toEqual({ brandName: 'A380币', ratio: 100 })
+  await expect(second.saas.getWalletTokenConfig()).resolves.toEqual({ brandName: 'SaaS 币', ratio: 100 })
 })
 
 test('demo 模式钱包 mock 也走数量口径（金额字段保留 + 数量由比例算出）', async () => {
@@ -341,7 +341,7 @@ test('demo 模式钱包 mock 也走数量口径（金额字段保留 + 数量由
   const wallet = await saas.getWallet()
   expect(wallet.availableAmount).toBe('888000')
   expect(wallet.tokenAmount).toBe('888000')
-  expect(wallet.tokenBrandName).toBe('A380币')
+  expect(wallet.tokenBrandName).toBe('SaaS 币')
   expect(saas.formatTokens(wallet.tokenAmount)).toBe('888,000')
   expect(saas.formatTokens(wallet.tokenAmount)).not.toMatch(CURRENCY_TRACE)
 

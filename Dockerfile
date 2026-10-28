@@ -23,7 +23,6 @@ LABEL org.opencontainers.image.title=$IMAGE_NAME \
       org.opencontainers.image.source=$IMAGE_SOURCE
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY c-end/ /usr/share/nginx/html/
-COPY c-end/ /usr/share/nginx/html/a380/
 COPY --from=build /app/dist-b/ /usr/share/nginx/html/b/
 RUN mv /usr/share/nginx/html/b/index.b.html /usr/share/nginx/html/b/index.html
 EXPOSE 80
