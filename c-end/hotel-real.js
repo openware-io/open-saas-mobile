@@ -190,6 +190,9 @@ async function bookRealHotel(hotelId) {
   var guestPhone = (document.querySelector('#hotel-guest-phone') || {}).value || '';
   if (!guestName.trim() || !guestPhone.trim()) { showToast('请填写入住人姓名和手机号'); return; }
   try {
+    // 先初始化 C 会员档案：后端 ord_order.customer_id 是「我的消费」的唯一归属键，
+    // 不能等用户首次打开资产页才懒创建，否则会生成查不到的酒店订单。
+    await SAAS.getWallet();
     var booking = await hotelApi('/business/hotel/bookings', {
       method: 'POST',
       body: JSON.stringify({ roomTypeId: roomTypeId, ratePlanId: ratePlanId, checkInDate: checkIn, checkOutDate: checkOut, rooms: rooms, guestName: guestName, guestPhone: guestPhone, pointsUsed: Number((document.querySelector('#hotel-points') || {}).value || 0), note: 'C H5' }),
