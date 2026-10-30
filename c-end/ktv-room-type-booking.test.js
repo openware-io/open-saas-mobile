@@ -99,9 +99,9 @@ test('创建预约走 roomTypeId 且请求体不含 resourceId，未选房型不
     partySize: 2, contact: '张三 13800000000',
   })
 
-  const call = fetch.mock.calls.find(([url, options]) => options && options.method === 'POST' && String(url).includes('/business/reservations'))
+  const call = fetch.mock.calls.find(([url, options]) => options && options.method === 'POST' && String(url).includes('/me/reservations'))
   expect(call, '未发出创建预约请求').toBeTruthy()
-  expect(String(call[0])).toBe('https://admin.dev.example.com/api/v1/business/reservations')
+  expect(String(call[0])).toBe('https://admin.dev.example.com/api/v1/me/reservations')
   const body = JSON.parse(call[1].body)
   expect(body.roomTypeId).toBe(7)
   expect(body).not.toHaveProperty('resourceId')
@@ -474,3 +474,4 @@ test('源码守卫：我的预约卡片展示下单时间（createdAt）与到�
   const saas = stripComments(await readRepo('c-end/saas.js'))
   expect(saas).toContain("request('GET', '/api/v1/me/reservations')")
 })
+
