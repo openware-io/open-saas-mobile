@@ -865,7 +865,7 @@
   async function listKtvRoomTypes() {
     try {
       if (!live) return fallbackOrThrow(function () { return MOCK_KTV_ROOM_TYPES.map(normalizeKtvRoomType); });
-      var data = await request('GET', '/api/v1/admin/resources/types');
+      var data = await request('GET', '/api/v1/business/resources/types');
       var types = toList(unwrap(data)).map(normalizeKtvRoomType).filter(function (type) {
         return type && type.roomTypeId != null;
       });
