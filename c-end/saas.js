@@ -1044,7 +1044,7 @@
     async createReservation(payload) {
       try {
         if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; });
-        return unwrap(await request('POST', '/api/v1/business/reservations', payload));
+        return unwrap(await request('POST', '/api/v1/me/reservations', payload));
       } catch (e) {
         return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; }, e);
       }
