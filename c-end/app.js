@@ -1115,6 +1115,7 @@ function renderMy() {
     '</div>' +
     '<section class="me-menu">' +
       '<button data-route="my-reservations"><span>📅 我的预约</span><span class="arrow">›</span></button>' +
+      '<button data-route="my-hotel-orders"><span>🏨 酒店订单</span><span class="arrow">›</span></button>' +
       '<button data-route="my-orders"><span>🧾 我的消费</span><span class="arrow">›</span></button>' +
       '<button data-route="ledger/coin"><span>💰 ' + walletBrand + '明细</span><span class="arrow">›</span></button>' +
       '<button data-route="ledger/points"><span>⭐ 积分明细</span><span class="arrow">›</span></button>' +
@@ -1229,6 +1230,7 @@ function orderCard(o) {
  */
 var HOTEL_BOOKING_STATUS = {
   PENDING: ['待确认', 'orange'],
+  PENDING_CONFIRM: ['待确认', 'orange'],
   PENDING_PAYMENT: ['待支付', 'orange'],
   CONFIRMED: ['已确认', 'blue'],
   CHECKED_IN: ['已入住', 'green'],
