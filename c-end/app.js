@@ -1213,7 +1213,7 @@ function orderLiveAmount(o) {
 function orderCard(o) {
   // 酒店订单的展示状态以 booking 状态为准；ord_order.trade_status 可能仍是 DRAFT
   // （酒店预订确认不等于支付订单已结算），不能把 DRAFT 当成用户在“已确认”时看到的状态。
-  var displayStatus = o.bookingStatus || o.status;
+  var displayStatus = o.displayStatus || o.bookingStatus || o.status;
   var itemBtn = o.status === 'SERVING'
     ? '<button class="primary-button" data-order-items="' + o.id + '">加服务项</button>'
     : '';
