@@ -1077,7 +1077,10 @@ function reservationBadge(status) {
 function orderBadge(status) {
   var map = {
     DRAFT: ['待确认', 'orange'], SERVING: ['服务中', 'blue'], WAITING_SETTLEMENT: ['待结算', 'orange'],
-    WAITING_PAYMENT: ['待支付', 'orange'], COMPLETED: ['已完成', 'green'], VOIDED: ['已作废', 'gray']
+    WAITING_PAYMENT: ['待支付', 'orange'], COMPLETED: ['已完成', 'green'], VOIDED: ['已作废', 'gray'],
+    PENDING_CONFIRM: ['待确认', 'orange'], CONFIRMED: ['已确认', 'blue'],
+    CHECKED_IN: ['已入住', 'green'], CHECKED_OUT: ['已退房', 'gray'],
+    CANCELLED: ['已取消', 'gray'], NO_SHOW: ['未到店', 'gray']
   };
   var hit = map[status] || [status || '未知', 'gray'];
   return '<span class="badge ' + hit[1] + '">' + escapeHtml(hit[0]) + '</span>';
@@ -1208,6 +1211,9 @@ function orderLiveAmount(o) {
 }
 
 function orderCard(o) {
+  // 酒店订单的展示状态以 booking 状态为准；ord_order.trade_status 可能仍是 DRAFT
+  // （酒店预订确认不等于支付订单已结算），不能把 DRAFT 当成用户在“已确认”时看到的状态。
+  var displayStatus = o.bookingStatus || o.status;
   var itemBtn = o.status === 'SERVING'
     ? '<button class="primary-button" data-order-items="' + o.id + '">加服务项</button>'
     : '';
@@ -1217,10 +1223,10 @@ function orderCard(o) {
   var billBtn = o.status !== 'SERVING' && o.status !== 'WAITING_PAYMENT'
     ? '<button class="secondary-button" data-route="order-bill/' + o.id + '">查看账单</button>'
     : '';
-  return '<article><header><span>' + escapeHtml(o.orderNo || ('#' + o.id)) + '</span>' + orderBadge(o.status) + '</header>' +
+  return '<article><header><span>' + escapeHtml(o.orderNo || ('#' + o.id)) + '</span>' + orderBadge(displayStatus) + '</header>' +
     '<h3>' + escapeHtml(o.businessType || 'KTV') + ' · 消费</h3>' +
     '<p>下单：' + escapeHtml(formatDateTime(o.createdAt)) + '</p>' +
-    '<footer><span>' + escapeHtml(orderBadge(o.status).replace(/<[^>]+>/g, '') || '') + '</span><b>' + minorMoney(orderLiveAmount(o), o.currencyCode) + '</b></footer>' + itemBtn + payBtn + billBtn + '</article>';
+    '<footer><span>' + escapeHtml(orderBadge(displayStatus).replace(/<[^>]+>/g, '') || '') + '</span><b>' + minorMoney(orderLiveAmount(o), o.currencyCode) + '</b></footer>' + itemBtn + payBtn + billBtn + '</article>';
 }
 
 /** 预约列表数据：首屏与静默刷新共用同一份加载（房态 + 房型取价，同一口径）。 */
@@ -1240,13 +1246,17 @@ var HOTEL_BOOKING_STATUS = {
   NO_SHOW: ['未到店', 'gray']
 };
 
+var hotelBookingLoadFailed = false;
+
 async function loadHotelBookingsSafe() {
+  hotelBookingLoadFailed = false;
   try {
     if (window.SaasHotelBookings && typeof window.SaasHotelBookings.list === 'function') {
       var rows = await window.SaasHotelBookings.list();
       return Array.isArray(rows) ? rows : [];
     }
   } catch (error) {
+    hotelBookingLoadFailed = true;
     console.warn('[saas] hotel bookings unavailable', error && error.message);
   }
   return [];
@@ -1282,9 +1292,12 @@ function paintMyReservations(items) {
   var cards = hotel.filter(function (booking) { return booking.status !== 'CANCELLED'; })
     .map(hotelBookingCard)
     .concat(ktv.map(reservationCard));
-  var html = cards.length
-    ? '<section class="item-list">' + cards.join('') + '</section>'
-    : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里');
+  var html = (hotelBookingLoadFailed
+    ? '<section class="home-notice"><span>⚠️</span><p>酒店订单加载失败，KTV 预约仍可正常查看；请稍后重试。</p></section>'
+    : '') +
+    (cards.length
+      ? '<section class="item-list">' + cards.join('') + '</section>'
+      : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里'));
   app.innerHTML = pageHead('我的预约', '<span></span>') + html;
   bindThumbFallback(app);
 }
@@ -1319,7 +1332,19 @@ function refreshMyReservations() {
 }
 
 /** 「我的消费」列表数据：首屏与静默刷新共用同一份加载。 */
-function loadMyOrders() { return SAAS.listOrders(); }
+async function loadMyOrders() {
+  var orders = await SAAS.listOrders();
+  var bookings = await loadHotelBookingsSafe();
+  if (!Array.isArray(orders)) return [];
+  var bookingStatusByOrderId = {};
+  (bookings || []).forEach(function (booking) {
+    if (booking && booking.orderId != null) bookingStatusByOrderId[String(booking.orderId)] = booking.status;
+  });
+  return orders.map(function (order) {
+    var bookingStatus = bookingStatusByOrderId[String(order.id)];
+    return bookingStatus ? Object.assign({}, order, { bookingStatus: bookingStatus }) : order;
+  });
+}
 
 /**
  * 「我的消费」绘制：首屏与静默刷新共用同一份渲染（金额只走 orderCard → orderLiveAmount）。
