@@ -504,6 +504,60 @@ async function loadBookingBusinessHours(storeId) {
   return bookingBusinessHours;
 }
 
+/** 当前预约页的房型容量/可约时段；服务端计算，页面只展示，不自行推算容量。 */
+let ktvAvailability = null;
+let ktvAvailabilityKey = '';
+function ktvAvailabilityKeyFor(roomTypeId, date, duration) {
+  return String(roomTypeId) + '|' + String(date) + '|' + String(duration);
+}
+async function loadKtvAvailability(roomTypeId, date, duration) {
+  const key = ktvAvailabilityKeyFor(roomTypeId, date, duration);
+  try {
+    const data = await SAAS.getKtvAvailability(roomTypeId, date, duration);
+    ktvAvailability = data && Array.isArray(data.slots) ? data : null;
+    ktvAvailabilityKey = key;
+  } catch (error) {
+    console.warn('[saas] KTV availability load failed', error);
+    ktvAvailability = null;
+    ktvAvailabilityKey = '';
+  }
+  return ktvAvailability;
+}
+function ktvAvailableSlot(time) {
+  if (!ktvAvailability || !Array.isArray(ktvAvailability.slots)) return null;
+  return ktvAvailability.slots.find(function (slot) { return slot.startTime === time; }) || null;
+}
+function ktvAvailabilityHint() {
+  if (!ktvAvailability) return '';
+  const available = ktvAvailability.slots.filter(function (slot) { return slot.available; }).map(function (slot) { return slot.startTime; });
+  if (!available.length) return '所选日期已无可约时段，请更换日期或房型';
+  return '可约时段：' + available.slice(0, 6).join('、') + (available.length > 6 ? ' 等' : '');
+}
+/** 日期/时长变化后刷新容量；当前时间满时自动切到下一个可约时段，避免用户提交后才看到 409。 */
+async function refreshKtvAvailability(form) {
+  if (!form || form.id !== 'ktv-order-form') return;
+  const roomTypeId = Number(form.dataset.roomTypeId);
+  const date = (form.querySelector('[name="date"]') || {}).value;
+  const duration = Number((form.querySelector('[name="duration"]') || {}).value || 3);
+  const timeInput = form.querySelector('[name="time"]');
+  if (!(roomTypeId > 0) || !date || !timeInput) return;
+  await loadKtvAvailability(roomTypeId, date, duration);
+  const hint = form.querySelector('[data-ktv-availability]');
+  if (hint) hint.textContent = ktvAvailabilityHint();
+  const current = ktvAvailableSlot(timeInput.value);
+  if (current && current.available) { updateBookingEstimate(form); return; }
+  const next = ktvAvailability && ktvAvailability.slots.find(function (slot) { return slot.available; });
+  if (next) {
+    timeInput.value = next.startTime;
+    const display = form.querySelector('[data-picker-display="time"]');
+    if (display) display.textContent = next.startTime;
+    showToast('原时段已满，已改选 ' + next.startTime);
+  } else if (ktvAvailability) {
+    showToast('该日期已无可约时段，请更换日期或房型');
+  }
+  updateBookingEstimate(form);
+}
+
 function bookingDateLabel(value, offset) {
   const date = new Date(value + 'T00:00:00');
   const prefix = offset === 0 ? '今天' : offset === 1 ? '明天' : offset === 2 ? '后天' : ['周日','周一','周二','周三','周四','周五','周六'][date.getDay()];
@@ -538,7 +592,22 @@ function bookingPickerOptions(name) {
     // 客人点不出必然被服务端拒绝的时刻；判断走 business-hours.js，页面不内联重写时段逻辑。
     const hours = bookingBusinessHours;
     if (!hours) return options;
-    return options.filter(function (option) { return isWithinBusinessHours(option.value, hours); });
+    const allowed = options.filter(function (option) { return isWithinBusinessHours(option.value, hours); });
+    // 有服务端可约时段时只展示仍可约的到店时段；当前已选时间即使刚好满也保留，避免输入框变成空值。
+    const form = document.querySelector('#ktv-order-form');
+    if (!form) return allowed;
+    const roomTypeId = Number(form.dataset.roomTypeId);
+    const dateInput = form.querySelector('[name="date"]');
+    const durationInput = form.querySelector('[name="duration"]');
+    const timeInput = form.querySelector('[name="time"]');
+    const date = dateInput ? dateInput.value : '';
+    const duration = Number(durationInput ? durationInput.value : 3) || 3;
+    const current = timeInput ? timeInput.value : '';
+    if (!ktvAvailability || ktvAvailabilityKey !== ktvAvailabilityKeyFor(roomTypeId, date, duration)) return allowed;
+    return allowed.filter(function (option) {
+      const slot = ktvAvailableSlot(option.value);
+      return option.value === current || !slot || slot.available;
+    });
   }
   if (name === 'duration') return [2,3,4,6].map(function (value) { return { value: String(value), label: value + ' 小时', hint: value === 3 ? '推荐' : '' }; });
   return [2,3,4,5,6,8,10,12,15,20].map(function (value) { return { value: String(value), label: value + ' 人', hint: value <= 6 ? '小聚' : value <= 12 ? '聚会' : '团建' }; });
@@ -600,6 +669,7 @@ function confirmBookingPicker() {
     const display = form.querySelector('[data-picker-display="' + name + '"]');
     if (display) display.textContent = selected.dataset.pickerLabel;
     if (name === 'duration') updateBookingEstimate(form);
+    if (name === 'date' || name === 'duration') refreshKtvAvailability(form);
   }
   closeBookingPicker();
 }
@@ -697,7 +767,11 @@ async function renderKtvBookForm(roomTypeId) {
   // 不传 storeId：C 端门店由服务端按签名上下文取，客户端不猜门店号。
   const hours = await loadBookingBusinessHours();
   const hoursText = businessHoursText(hours);
-  const defaultTime = hours.openTime;
+  // 默认时段必须来自服务端可约时段：不能把固定 18:00 写死，否则已有预约会把用户直接撞到 409。
+  await loadKtvAvailability(roomTypeId, defaultDate, 3);
+  const defaultTime = (ktvAvailability && ktvAvailability.slots.find(function (slot) { return slot.available; }) || {}).startTime
+    || hours.openTime;
+  const availabilityHint = ktvAvailabilityHint();
   app.innerHTML = `${pageHead('KTV 预约', '<span></span>')}
     <section class="booking-intro"><span>KTV RESERVATION</span><h1>填写预约信息</h1><p>选择到店时间并留下联系方式，门店确认后即可到店开台。</p></section>
     <section class="booking-summary"><img src="${escapeHtml(roomTypePhoto)}" alt="${escapeHtml(roomTypeName)}" data-room-fallback="${escapeHtml(roomTypeFallback)}" data-room-type-photo><div><small>已选包厢类型</small><h2>${escapeHtml(roomTypeName)}</h2><p>${roomType.capacity ? '建议 ' + roomType.capacity + ' 人以内' : '到店登记后开台'}</p><p class="booking-desc">具体包厢到店后由门店分配</p><strong>${escapeHtml(priceShort) || '无需在线支付'}</strong></div></section>
@@ -709,6 +783,7 @@ async function renderKtvBookForm(roomTypeId) {
         ${bookingPickerRow('duration', '预计时长', '3', '3 小时', '长')}
         ${bookingPickerRow('partySize', '到店人数', '2', '2 人', '人')}
         <p class="booking-hours" data-business-hours>营业时间：${escapeHtml(hoursText)}</p>
+        ${availabilityHint ? `<p class="booking-hours" data-ktv-availability>${escapeHtml(availabilityHint)}</p>` : ''}
       </section>
       ${priceShort ? `<section class="form-card booking-card"><header><span>02</span><div><h2>包厢类型价格</h2><p>${escapeHtml(priceHeadline)}</p>${priceBreakdown && priceDetail ? `<p class="booking-price-detail">${escapeHtml(priceDetail)}</p>` : ''}</div></header><p class="booking-price-estimate" data-booking-estimate></p></section>` : ''}
       <section class="form-card booking-card contact-card"><header><span>${priceShort ? '03' : '02'}</span><div><h2>预约人信息</h2><p>仅用于本次预约联系与提醒</p></div></header>

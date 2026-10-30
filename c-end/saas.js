@@ -1041,6 +1041,18 @@
     },
 
     /** 创建预约：预约按房型（roomTypeId）创建，**不得传具体包厢 resourceId**（服务端 400 拒绝）。 */
+    async getKtvAvailability(roomTypeId, date, durationHours) {
+      try {
+        if (!live) return fallbackOrThrow(function () { return { slots: [] }; });
+        var path = '/api/v1/me/reservations/availability?roomTypeId=' + encodeURIComponent(roomTypeId)
+          + '&date=' + encodeURIComponent(date);
+        if (durationHours) path += '&durationHours=' + encodeURIComponent(durationHours);
+        return unwrap(await request('GET', path));
+      } catch (e) {
+        return fallbackOrThrow(function () { return { slots: [] }; }, e);
+      }
+    },
+
     async createReservation(payload) {
       try {
         if (!live) return fallbackOrThrow(function () { return { id: Date.now(), reservationNo: 'SaaS' + String(Date.now()).slice(-10), status: 'PENDING' }; });
