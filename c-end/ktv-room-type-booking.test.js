@@ -153,14 +153,14 @@ test('房型报价按 roomTypeId 取价，卡片展示 combinedUnitPrice 合计�
 
 // —— 4. 房型列表来源：直接读后台房型字典，读不到时按资源归并降级 ——
 
-test('房型列表读 /admin/resources/types；读不到时按资源列表归并（包厢号不得冒充房型）', async () => {
+test('房型列表读 /business/resources/types；读不到时按资源列表归并（包厢号不得冒充房型）', async () => {
   const types = [{ id: 7, code: '001', name: '小包', capacity: 4, status: 'ACTIVE', storeId: 100 }]
   const directFetch = vi.fn().mockResolvedValue(jsonResponse(types))
   const { saas } = await loadSaas(directFetch)
 
   const roomTypes = await saas.listKtvRoomTypes()
 
-  expect(String(directFetch.mock.calls[0][0])).toBe('https://admin.dev.example.com/api/v1/admin/resources/types')
+  expect(String(directFetch.mock.calls[0][0])).toBe('https://admin.dev.example.com/api/v1/business/resources/types')
   expect(roomTypes).toEqual([
     // imageUrl / imageUrls：房型图片（后台「房型管理」上传），字典路径没配图时由包厢归并补齐 /
     // 保持空数组；此处无包厢数据故为空
@@ -174,7 +174,7 @@ test('房型列表读 /admin/resources/types；读不到时按资源列表归并
 
   // 房型字典不可读（403 / 后台路径被收紧）→ 既有降级：按 /business/resources 归并房型
   const degradedFetch = vi.fn().mockImplementation(async (url) => {
-    if (String(url).includes('/admin/resources/types')) {
+    if (String(url).includes('/business/resources/types')) {
       return { ok: false, status: 403, text: async () => '{"code":"FORBIDDEN"}' }
     }
     return jsonResponse([
@@ -315,7 +315,7 @@ test('房型展示图取该房型首个「带图」包厢的主图；多房型�
   const bigThumb = '/api/v1/media-public/open-media-public/saas/1001/202609/big.png'
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/resources/types')) {
+    if (target.includes('/business/resources/types')) {
       // 房型字典本身不带图 → 只能靠包厢归并补图（老数据路径）
       return jsonResponse([
         { id: 7, code: '001', name: '小包', capacity: 4, status: 'ACTIVE' },
@@ -352,7 +352,7 @@ test('房型展示图取该房型首个「带图」包厢的主图；多房型�
   // 资源列表读不到时不得整页失败：房型仍在，只是没有样板图
   const brokenResources = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/resources/types')) return jsonResponse([{ id: 7, code: '001', name: '小包', capacity: 4, status: 'ACTIVE' }])
+    if (target.includes('/business/resources/types')) return jsonResponse([{ id: 7, code: '001', name: '小包', capacity: 4, status: 'ACTIVE' }])
     return { ok: false, status: 500, text: async () => '{"code":"BOOM"}' }
   })
   const degraded = await loadSaas(brokenResources)
@@ -396,7 +396,7 @@ test('房型自带图优先：多图全集主图在前、去重去空，且不�
   const roomThumb = '/api/v1/media-public/open-media-public/saas/1001/202609/room.png'
   const fetch = vi.fn().mockImplementation(async (url) => {
     const target = String(url)
-    if (target.includes('/admin/resources/types')) {
+    if (target.includes('/business/resources/types')) {
       // 后台已给房型配图：mainImageUrl 是主图，imageUrls 是多图（列表没按主图排在最前，页面要自己归位）
       return jsonResponse([
         { id: 7, code: '001', name: '小包', capacity: 4, status: 'ACTIVE', imageUrls: [typeSecond, typeMain, typeSecond, '  '], mainImageUrl: typeMain },
@@ -474,4 +474,5 @@ test('源码守卫：我的预约卡片展示下单时间（createdAt）与到�
   const saas = stripComments(await readRepo('c-end/saas.js'))
   expect(saas).toContain("request('GET', '/api/v1/me/reservations')")
 })
+
 
