@@ -3,19 +3,34 @@ function hotelMoney(minor, currency) {
   return window.SaasMoney ? window.SaasMoney.formatMoney(minor, currency) : '-';
 }
 
+/**
+ * 酒店 API 统一出口：同源 fetch + 结构化错误（status/code/payload 供 api-errors.js 翻译中文）。
+ *
+ * <p>客户端超时只套在**读请求（GET）**上：写请求（提交预订 / 取消）若被客户端判超时，
+ * 服务端可能其实已经成功，前端再报「失败」会诱导顾客重复提交；写请求因此不设客户端超时，
+ * 结果以「我的酒店订单」页的最终状态为准。读请求超时由 SaasPageLoad.withTimeout 兜底，
+ * 接口挂住不会让页面永远停在「加载中…」。
+ */
 async function hotelApi(path, options) {
-  var response = await fetch('/api/v1' + path, Object.assign({
+  var pending = fetch('/api/v1' + path, Object.assign({
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
-  }, options || {}));
-  var payload = null;
-  try { payload = await response.json(); } catch (e) {}
-  if (!response.ok) {
-    var error = new Error((payload && payload.message) || ('HTTP ' + response.status));
-    error.code = payload && payload.code;
-    throw error;
-  }
-  return payload;
+  }, options || {})).then(async function (response) {
+    var payload = null;
+    try { payload = await response.json(); } catch (e) {}
+    if (!response.ok) {
+      var error = new Error((payload && payload.message) || ('HTTP ' + response.status));
+      error.status = response.status;
+      error.code = payload && payload.code;
+      error.payload = payload;
+      throw error;
+    }
+    return payload;
+  });
+  var method = String((options && options.method) || 'GET').toUpperCase();
+  var withTimeout = method === 'GET' && window.SaasPageLoad
+    && typeof window.SaasPageLoad.withTimeout === 'function';
+  return withTimeout ? window.SaasPageLoad.withTimeout(pending) : pending;
 }
 
 // 「我的」页要复用酒店订单；只暴露只读列表，不复制订单渲染逻辑。
@@ -50,7 +65,7 @@ function hotelCards(hotels) {
 }
 
 async function renderRealHotelList() {
-  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-hotel-orders">订单</button>') +
+  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-hotel-orders">我的酒店订单</button>') +
     '<section class="list" id="real-hotel-list"><p class="empty">酒店加载中…</p></section>';
   var list = document.querySelector('#real-hotel-list');
   if (list && hotelListCache.length) { list.innerHTML = hotelCards(hotelListCache); bindHotelCoverFallback(list); }
@@ -76,7 +91,7 @@ async function renderRealHotelList() {
       showToast('网络不稳定，已显示上次结果');
       return;
     }
-    list.innerHTML = emptyState('🏨', '酒店加载失败', error.message || '请稍后重试') +
+    list.innerHTML = emptyState('🏨', '酒店加载失败', apiErrorText(error, '请稍后重试')) +
       '<button class="retry-button" type="button" data-retry="service/hotel">重新加载</button>';
   }
 }
@@ -153,7 +168,7 @@ async function renderRealHotelDetail(hotelId) {
       '<button class="primary-button" data-hotel-book>提交预订</button></section>';
   } catch (error) {
     var root = document.querySelector('#real-hotel-detail');
-    if (root) root.innerHTML = emptyState('🏨', '酒店加载失败', error.message || '请稍后重试');
+    if (root) root.innerHTML = emptyState('🏨', '酒店加载失败', apiErrorText(error, '请稍后重试'));
   }
 }
 
@@ -176,7 +191,7 @@ async function quoteRealHotel(hotelId) {
       ? '<section class="detail-card"><h3>实时报价</h3><p>总价 <strong>' + hotelMoney(quote.totalMinor, quote.currency) + '</strong> · ' + quote.nights.length + ' 晚 · ' + rooms + ' 间</p></section>'
       : emptyState('🏨', '所选日期无房', '请调整日期或房型');
   } catch (error) {
-    if (target) target.innerHTML = emptyState('🏨', '报价失败', error.message || '请稍后重试');
+    if (target) target.innerHTML = emptyState('🏨', '报价失败', apiErrorText(error, '请稍后重试'));
   }
 }
 
@@ -190,7 +205,7 @@ async function bookRealHotel(hotelId) {
   var guestPhone = (document.querySelector('#hotel-guest-phone') || {}).value || '';
   if (!guestName.trim() || !guestPhone.trim()) { showToast('请填写入住人姓名和手机号'); return; }
   try {
-    // 先初始化 C 会员档案：后端 ord_order.customer_id 是「我的消费」的唯一归属键，
+    // 先初始化 C 会员档案：后端 ord_order.customer_id 是「我的订单」的唯一归属键，
     // 不能等用户首次打开资产页才懒创建，否则会生成查不到的酒店订单。
     await SAAS.getWallet();
     var booking = await hotelApi('/business/hotel/bookings', {
@@ -200,50 +215,84 @@ async function bookRealHotel(hotelId) {
     if (!routeIsCurrent('real-hotel/' + hotelId)) return;
     app.innerHTML = pageHead('预订成功', '<span></span>') +
       '<section class="success"><div>✓</div><h1>预订已提交</h1><p>' + escapeHtml(booking.bookingNo) + '</p>' +
-      '<p>应付 ' + hotelMoney(booking.amountMinor, booking.currency) + ' · 状态 ' + escapeHtml(booking.status) + '</p></section>' +
+      '<p>应付 ' + hotelMoney(booking.amountMinor, booking.currency) + ' · 状态 ' + escapeHtml(hotelOrderStatus(booking.status)[0]) + '</p></section>' +
       '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" data-route="my-hotel-orders">查看订单</button></footer>';
   } catch (error) {
-    showToast(error.message || '预订失败');
+    showToast(apiErrorText(error, '预订失败，请稍后重试'));
   }
 }
 
+/**
+ * 酒店预订状态映射：当前服务端闭集为 PENDING_CONFIRM / CONFIRMED / CHECKED_IN /
+ * CHECKED_OUT / DUE_OUT / CANCELLED / NO_SHOW；任何状态都翻译成中文，绝不把英文枚举展示给顾客。
+ * PENDING / COMPLETED 是历史数据兼容值（只读展示；COMPLETED 不出现取消按钮），
+ * 避免库里的旧记录重新露出英文；已废弃的待支付/待付定金状态不再返回，也不在本表恢复。
+ */
+var HOTEL_ORDER_STATUS = {
+  PENDING: ['待确认', 'pending'],
+  PENDING_CONFIRM: ['待确认', 'pending'],
+  CONFIRMED: ['已确认', 'confirmed'],
+  CHECKED_IN: ['已入住', 'confirmed'],
+  CHECKED_OUT: ['已退房', 'completed'],
+  DUE_OUT: ['待退房', 'pending'],
+  CANCELLED: ['已取消', 'cancelled'],
+  NO_SHOW: ['未到店', 'no-show'],
+  COMPLETED: ['已完成', 'completed']
+};
+
+function hotelOrderStatus(status) {
+  return HOTEL_ORDER_STATUS[status] || [status ? String(status) : '处理中', 'default'];
+}
+
+/** 取消判据与服务端一致（HotelBookingApplicationService.cancel 仅拒绝 CANCELLED / CHECKED_OUT）。 */
+function canCancelHotelOrder(status) {
+  return status !== 'CANCELLED' && status !== 'CHECKED_OUT' && status !== 'COMPLETED';
+}
+
+/** 单张酒店订单卡片（入住/退房日期走 SaasDateTime 的日期出口：M月D日）。 */
+function hotelOrderCard(order) {
+  var status = hotelOrderStatus(order.status);
+  var checkIn = order.checkInDate ? SaasDateTime.formatStoreDate(order.checkInDate) : '待确认';
+  var checkOut = order.checkOutDate ? SaasDateTime.formatStoreDate(order.checkOutDate) : '待确认';
+  return '<article class="hotel-order-card">' +
+    '<header class="hotel-order-head"><div><h3>' + escapeHtml(order.bookingNo || ('#' + order.id)) + '</h3>' +
+      '<p>' + escapeHtml(order.roomType || '房型待确认') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p></div>' +
+      '<span class="hotel-order-status is-' + status[1] + '">' + escapeHtml(status[0]) + '</span></header>' +
+    '<div class="hotel-order-dates"><div><small>入住</small><strong>' + escapeHtml(checkIn) + '</strong></div>' +
+      '<div><small>退房</small><strong>' + escapeHtml(checkOut) + '</strong></div></div>' +
+    '<footer class="hotel-order-foot"><span class="hotel-order-price">' + hotelMoney(order.amountMinor, order.currency) + '</span>' +
+      (canCancelHotelOrder(order.status) ? '<button class="hotel-order-cancel" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') +
+    '</footer></article>';
+}
+
+/** 列表绘制（SaasPageLoad.renderPage 的 render 出口；首屏与重试共用）。 */
+function paintHotelOrderList(orders) {
+  var list = Array.isArray(orders) ? orders : [];
+  var html = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') +
+    (list.length
+      ? '<section class="list">' + list.map(hotelOrderCard).join('') + '</section>'
+      : emptyState('🏨', '暂无酒店订单', '去酒店页选择房型并提交预订'));
+  if (app.innerHTML === html) return;
+  app.innerHTML = html;
+}
+
+/**
+ * 「我的酒店订单」：加载/超时/失败统一走 SaasPageLoad（错误态带 data-retry 可重试），
+ * 不再手写加载中占位；错误文案走 api-errors（不把内部权限文案直出给顾客）。
+ */
 async function renderRealHotelOrders() {
-  app.innerHTML = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') +
-    '<section class="list" id="real-hotel-orders"><p class="empty">订单加载中…</p></section>';
-  try {
-    var orders = await hotelApi('/business/hotel/bookings');
-    if (!routeIsCurrent('my-hotel-orders')) return;
-    var list = document.querySelector('#real-hotel-orders');
-    if (!list) return;
-    if (!orders || !orders.length) {
-      list.innerHTML = emptyState('🏨', '暂无酒店订单', '去酒店页选择房型并提交预订');
-      return;
-    }
-    var statusLabels = {
-      PENDING_PAYMENT: ['待支付', 'pending'],
-      PENDING_DEPOSIT: ['待付定金', 'pending'],
-      CONFIRMED: ['已确认', 'confirmed'],
-      CANCELLED: ['已取消', 'cancelled'],
-      CHECKED_OUT: ['已退房', 'completed'],
-      COMPLETED: ['已完成', 'completed'],
-      NO_SHOW: ['未到店', 'no-show']
-    };
-    list.innerHTML = orders.map(function (order) {
-      var status = statusLabels[order.status] || [order.status, 'default'];
-      return '<article class="hotel-order-card">' +
-        '<header class="hotel-order-head"><div><h3>' + escapeHtml(order.bookingNo) + '</h3>' +
-          '<p>' + escapeHtml(order.roomType || '房型待确认') + ' · ' + escapeHtml(order.roomNo || '待分配') + '</p></div>' +
-          '<span class="hotel-order-status is-' + status[1] + '">' + escapeHtml(status[0]) + '</span></header>' +
-        '<div class="hotel-order-dates"><div><small>入住</small><strong>' + escapeHtml(order.checkInDate) + '</strong></div>' +
-          '<div><small>退房</small><strong>' + escapeHtml(order.checkOutDate) + '</strong></div></div>' +
-        '<footer class="hotel-order-foot"><span class="hotel-order-price">' + hotelMoney(order.amountMinor, order.currency) + '</span>' +
-          (order.status === 'PENDING_PAYMENT' ? '<button class="hotel-order-cancel" data-cancel-booking="' + escapeHtml(order.id) + '">取消预订</button>' : '') +
-        '</footer></article>';
-    }).join('');
-  } catch (error) {
-    var list = document.querySelector('#real-hotel-orders');
-    if (list) list.innerHTML = emptyState('🏨', '订单加载失败', error.message || '请稍后重试');
-  }
+  var route = 'my-hotel-orders';
+  await SaasPageLoad.renderPage({
+    name: route,
+    retryRoute: route,
+    errorTitle: '酒店订单加载失败',
+    isCurrent: function () { return routeIsCurrent(route); },
+    mount: function (html) {
+      app.innerHTML = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') + html;
+    },
+    load: function () { return window.SaasHotelBookings.list(); },
+    render: paintHotelOrderList,
+  });
 }
 document.addEventListener('click', function (event) {
   var button = event.target.closest('[data-hotel-picker]');
@@ -265,6 +314,6 @@ document.addEventListener('click', async function (event) {
     showToast('预订已取消');
     await renderRealHotelOrders();
   } catch (error) {
-    showToast(error.message || '取消失败');
+    showToast(apiErrorText(error, '取消失败，请稍后重试'));
   }
 });

@@ -177,7 +177,10 @@
   // **不得出现货币符号或币种**（只有现金与价格才带货币单位，现金默认 USD）。
   // 数量换算只允许在本文件内部：数量 = 余额（最小货币单位）÷ 100 × 租户比例（wallet_ratio，默认 100，语义「1 主单位 = N 代币」）；
   // 积分就是个数（1:1，不换算）。禁止对代币/积分调用 formatMoney。
-  /** 品牌名缺失时的唯一回退（租户未配置 wallet_brand_name）；页面不得再硬编码。 */
+  /** 品牌名缺失时的唯一回退（租户未配置 wallet_brand_name）；页面不得再硬编码。
+   *  注意：本文件与 B 端 `src/shared/utils/money` 共用同一份「数量口径」契约
+   *  （token-display-contract.test.js 要求两端逐字一致），因此这里保持共享值；
+   *  C 端页面展示用的品牌回退统一取 `SAAS.DEFAULT_WALLET_BRAND`（租户配置失败时的唯一出口）。 */
   var DEFAULT_TOKEN_BRAND = '储值币';
   /** 租户未配置比例时的默认「1 主单位 = N 代币」（缺失即按 100 处理且不报错）。 */
   var DEFAULT_TOKEN_RATIO = 100;

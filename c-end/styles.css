@@ -73,10 +73,31 @@ button { cursor: pointer; }
 .mini-card small { display: block; margin-top: 4px; color: var(--muted); }
 
 .page-head { position: sticky; z-index: 5; top: 0; display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin: -10px -16px 10px; padding: 8px 10px; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
-.page-head h1 { margin: 0; text-align: center; font-size: 18px; }
+.page-head h1 {
+  margin: 0;
+  /* 右侧按钮绝对定位后，给标题预留安全区：长标题（如「深圳-重庆」类动态标题）只做省略号，
+     不会压到右侧「我的订单 / 我的酒店订单」按钮上；左右对称 padding 保证标题仍居中。 */
+  padding: 0 48px;
+  overflow: hidden;
+  text-align: center;
+  font-size: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .icon-button { width: 40px; height: 40px; border: 0; border-radius: 12px; background: transparent; font-size: 23px; }
 .head-action { min-width: 40px; border: 0; color: var(--primary-dark); background: transparent; padding: 6px 0; font-size: 13px; white-space: nowrap; }
 .head-action b { display: inline-grid; min-width: 18px; height: 18px; place-items: center; border-radius: 9px; color: white; background: var(--danger); font-size: 10px; }
+/* 头右按钮脱离中列：文案长于 44px（如「我的订单 / 我的酒店订单」）时标题仍严格居中；
+   窄屏用省略号兜底，避免挤压标题或溢出页面。 */
+.page-head .head-action {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  max-width: 52%;
+  overflow: hidden;
+  transform: translateY(-50%);
+  text-overflow: ellipsis;
+}
 .search { width: 100%; border: 1px solid transparent; border-radius: 14px; outline: none; background: #eceff3; padding: 12px 14px; }
 .search:focus { border-color: rgba(19,185,129,.4); background: white; }
 .chips { display: flex; gap: 8px; overflow-x: auto; padding: 10px 0; scrollbar-width: none; }
@@ -93,6 +114,8 @@ button { cursor: pointer; }
 
 .home-notice { display: flex; gap: 8px; align-items: flex-start; margin: 16px 2px 0; color: var(--muted); font-size: 12px; }
 .home-notice p { margin: 0; }
+/* hidden 属性必须能盖过 .home-notice 的 display:flex（否则默认占位文案会一直显示） */
+.home-notice[hidden] { display: none; }
 .plain-card, .detail-card, .form-card, .summary-card, .trip-summary, .flight-detail, .route-summary {
   border-radius: var(--radius); background: white; box-shadow: 0 4px 14px rgba(38,48,62,.055);
 }
@@ -492,6 +515,16 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   font-weight: 800;
   flex-shrink: 0;
 }
+/* 身份区头像用中性线性图标（不再用会员 ID 首字母伪造头像） */
+.me-avatar svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
 .me-identity { min-width: 0; }
 .me-identity h2 { margin: 0 0 5px; font-size: 20px; }
 .me-identity p { margin: 0; color: rgba(255,255,255,.72); font-size: 12px; }
@@ -513,7 +546,7 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 }
 .me-stat span { color: var(--muted); font-size: 12px; }
 .me-stat strong { font-size: 21px; color: var(--navy); }
-.me-menu { margin-top: 12px; border-radius: 16px; background: white; box-shadow: 0 4px 14px rgba(38,48,62,.055); }
+.me-menu { margin-top: 12px; border-radius: 16px; background: white; box-shadow: 0 4px 14px rgba(38,48,62,.055); overflow: hidden; }
 .me-menu button {
   display: flex;
   align-items: center;
@@ -524,10 +557,39 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   background: transparent;
   padding: 15px 16px;
   font-size: 15px;
+  text-align: left;
+  color: var(--text);
 }
 .me-menu button:last-child { border-bottom: 0; }
-.me-menu button b { color: var(--muted); font-weight: 400; }
+/* 行内图标与底部 tab 同一套线性 SVG（stroke 1.85），不再用 emoji：
+   避免 Android/WebView 的彩色位图尺寸随 ROM 变化导致行高跳动。用 margin 而不是 flex gap（WebView 83 无 flex gap）。 */
+.me-menu .me-item { display: flex; align-items: center; min-width: 0; }
+.me-menu .me-item svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  margin-right: 10px;
+  fill: none;
+  stroke: var(--primary-dark);
+  stroke-width: 1.85;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.me-menu button:active { background: #f7f8fa; }
 .me-menu .arrow { color: #c2c7ce; }
+
+/* 「我的」资产读取失败的内联提示（保留上次成功值，点按重试） */
+.home-notice .notice-retry {
+  margin-left: auto;
+  border: 1px solid rgba(19,185,129,.28);
+  border-radius: 999px;
+  color: var(--primary-dark);
+  background: #effcf8;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
 
 /* 预约/订单列表卡片 */
 .item-list { display: grid; gap: 10px; }
@@ -611,6 +673,15 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
 .compat-webview83 .page-head {
   background: #fff;
 }
+/* 「我的」hero（头像↔身份 15px）与底部 tab（图标↔文字 2px）同样不能依赖 flex gap：
+   WebView 83 无 flex gap，必须用 margin 回退（STANDARD_32 §10.3）。 */
+.compat-webview83 .me-hero { gap: 0; }
+.compat-webview83 .me-hero > * + * { margin-left: 15px; }
+.compat-webview83 .tab-item { gap: 0; }
+.compat-webview83 .tab-item > * + * { margin-top: 2px; }
+/* WebView 83：兼容组的 `.home-notice > * + *{margin-left:8px}` 会覆盖 .notice-retry 的
+   margin-left:auto，把「重试」从右对齐挤到文案后面；显式恢复右对齐（specificity 更高）。 */
+.compat-webview83 .home-notice .notice-retry { margin-left: auto; }
 .compat-webview83 .mini-card img {
   height: 26vw;
   max-height: 160px;

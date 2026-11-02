@@ -5,7 +5,7 @@ import { expect, test, vi } from 'vitest'
 /**
  * 「加服务项」一直加载中（线上缺陷）的回归守卫。
  *
- * 现象：我的消费 → 加服务项 → 页面永远停在「加载中…」。
+ * 现象：我的订单 → 加服务项 → 页面永远停在「加载中…」。
  * 真因（两层）：
  *   1) 接口失败：C 端消费者会话（appId=saas-c）的权限快照来自
  *      iam_consumer_application.permissions_json，只有 reservation.view / reservation.create；
@@ -384,7 +384,7 @@ test('加服务项失败：弹出后端中文原因（库存不足 409），不�
   expect(harness.toast.textContent).not.toContain('INVENTORY_INSUFFICIENT')
 })
 
-// —— 我的消费 / 我的预约：同类渲染函数同样不得停在加载中 ——
+// —— 我的订单 / 我的预约：同类渲染函数同样不得停在加载中 ——
 
 test('renderMyOrders / renderMyReservations：接口失败渲染错误态而不是停在「加载中…」', async () => {
   const harness = await loadCend(async () => fail(503, 'SERVICE_UNAVAILABLE', '服务暂时不可用'))
@@ -392,7 +392,7 @@ test('renderMyOrders / renderMyReservations：接口失败渲染错误态而不�
   // 渲染前先站到该路由上：页面渲染带路由守卫（请求回来晚就整批丢弃），错误态只落到发起渲染的那一刻所在的路由。
   harness.sandbox.location.hash = '#/my-orders'
   await harness.api.renderMyOrders()
-  expect(harness.app.innerHTML).toContain('消费单加载失败')
+  expect(harness.app.innerHTML).toContain('订单加载失败')
   expect(harness.app.innerHTML).toContain('data-retry="my-orders"')
   expect(harness.app.innerHTML).not.toContain('加载中')
 
@@ -457,7 +457,7 @@ test('saas.js：请求超时可注入（REQUEST_TIMEOUT / 504），请求路径�
 
 // —— 源码守卫：页面确实接上了加载守卫，且不再手写「加载中…」——
 
-test('源码守卫：我的消费相关渲染函数统一走 SaasPageLoad，入口先加载 page-load.js', async () => {
+test('源码守卫：我的订单相关渲染函数统一走 SaasPageLoad，入口先加载 page-load.js', async () => {
   const source = await readFile(new URL('./app.js', import.meta.url), 'utf8')
   /** 取某个函数声明到「下一个函数声明 / 下一段块注释」之间的正文（不含函数外的说明注释）。 */
   const bodyOf = (marker) => {

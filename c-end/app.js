@@ -6,7 +6,6 @@ try { localStorage.removeItem('saas-orders'); } catch (_) {}
 
 const state = {
   cart: readLocal('saas-cart', {}),
-  orders: readLocal('saas-orders', []),
   venueSort: {},
   ktvRooms: [
     ['K01 小包', '空闲', '绿色'], ['K02 小包', '占用', '蓝色'], ['K03 小包', '预定', '橙色'],
@@ -29,10 +28,8 @@ function saveLocal(key, value) {
 }
 /** 今天 + days 的设备本地日期（走 SaasDateTime，禁止 toISOString 的 UTC 平移）。 */
 function dateOffset(days) { return SaasDateTime.dateOffset(days); }
-function formatDate(value) {
-  const date = new Date(`${value}T00:00:00`);
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-}
+/** 日期（YYYY-MM-DD）展示：统一走 SaasDateTime 的唯一日期出口（M月D日，不按设备时区平移）。 */
+function formatDate(value) { return SaasDateTime.formatStoreDate(value); }
 /** 前端演示数据金额（主单位）→ 统一展示「符号紧跟金额」。后端真实金额一律走 minorMoney，不得混用。 */
 function mockMoney(value) { return SAAS.formatYuan(value); }
 /** 后端金额（最小货币单位）→ 统一展示；currencyCode 缺省用当前租户币种，单据快照可显式传。 */
@@ -135,6 +132,29 @@ function currentRoute() { return location.hash.replace(/^#\/?/, '') || 'home'; }
   }
 })();
 function routeIsCurrent(route) { return currentRoute() === route; }
+
+/** 会员档案尚未初始化（后端 404 MEMBER_NOT_FOUND）：按空态处理，不当成加载失败。 */
+function isMemberNotInitialized(error) {
+  if (!error) return false;
+  if (error.code === 'MEMBER_NOT_FOUND') return true;
+  return /MEMBER_NOT_FOUND/.test(String(error.message || ''));
+}
+
+/** 「我的」分区路由：返回键固定回「我的」，避免从 App 外深链进入时 history.back() 退出应用。 */
+function isMySectionRoute(route) {
+  var value = String(route || '');
+  return value === 'my-reservations' || value === 'my-orders' || value === 'my-hotel-orders'
+    || value === 'orders' || value.indexOf('ledger/') === 0
+    || value.indexOf('order-bill/') === 0 || value.indexOf('order-items/') === 0;
+}
+
+/** 未知路由：渲染现有空态 + 返回首页，不再静默回落首页（深链失效时用户可感知）。 */
+function renderNotFound() {
+  // 不渲染 emoji 图标；右槽显式传空，避免出现与「页面不存在」无关的默认「我的订单」按钮。
+  app.innerHTML = pageHead('页面不存在', '<span></span>') +
+    '<section class="empty"><h2>页面不存在</h2><p>链接可能已失效，返回首页继续浏览。</p>' +
+    '<button class="primary-button" type="button" data-route="home">返回首页</button></section>';
+}
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add('show');
@@ -182,7 +202,7 @@ function showConfirm(title, message, options = {}) {
     modal.classList.add('show');
   });
 }
-function pageHead(title, right = '<button class="head-action" data-route="my-orders">订单</button>') {
+function pageHead(title, right = '<button class="head-action" data-route="my-orders">我的订单</button>') {
   return `<header class="page-head"><button class="icon-button" data-back aria-label="返回">‹</button><h1>${escapeHtml(title)}</h1>${right}</header>`;
 }
 
@@ -200,10 +220,6 @@ function emptyState(icon, title, copy) {
   return `<section class="empty"><span>${icon}</span><h2>${title}</h2><p>${copy}</p></section>`;
 }
 function serviceById(id) { return data.services.find(item => item.id === id); }
-function addOrder(order) {
-  state.orders.unshift(order);
-  saveLocal('saas-orders', state.orders);
-}
 
 // 储值品牌展示名与代币比例：取租户配置 wallet_brand_name 与 wallet_ratio（默认「SaaS 币」、比例 100），
 // 各页面统一使用，不硬编码。储值币与积分是**数量**，不是货币：展示只走 SAAS.formatTokens / formatPoints。
@@ -271,7 +287,7 @@ function renderHome() {
         ['foot', 'SaaS足浴', 'foot-1.png', '放松身心 · 预约免排队'],
       ].map(([id, title, pic, note]) => `<button class="mini-card" data-route="service/${id}"><img src="${image(pic)}" alt="${title}"><span class="mini-card-copy"><strong>${title}</strong><small>${note}</small></span></button>`).join('')}
     </section>
-    <section class="home-notice"><span>ⓘ</span><p>页面内数据、价格和订单均为前端演示，不会产生真实费用。</p></section>`;
+    <section class="home-notice"><span>ⓘ</span><p>服务内容与价格以门店实际为准，如有疑问请联系门店。</p></section>`;
   refreshBalances();
 }
 
@@ -296,57 +312,120 @@ function refreshBalances() {
 /** 账本路由：`ledger/coin` / `ledger/points`（与 render 的分支同一口径，守卫与刷新都用它）。 */
 function ledgerRoute(type) { return type === 'points' ? 'ledger/points' : 'ledger/coin'; }
 
+/** 明细页每页条数（与后端默认 pageSize=20 一致；超过一页必须能「加载更多」，不能静默截断）。 */
+var LEDGER_PAGE_SIZE = 20;
+
+/** 明细视图状态：首屏/静默刷新重置为第一页；「加载更多」只在当前视图基础上追加。 */
+var ledgerView = { isCoin: true, records: [], page: 1, pages: 0 };
+var ledgerMoreLoading = false;
+
 /**
- * 账本数据（余额 + 明细）：首屏与静默刷新共用同一份加载，不存在第二条数据路径。
+ * 账本数据（余额 + 第一页明细）：首屏与静默刷新共用同一份加载，不存在第二条数据路径。
  * 储值币 / 积分都是**数量**：展示只走 walletTokenText / formatPoints。
  */
 async function loadLedgerData(type) {
   const isCoin = type !== 'points';
   if (isCoin) {
     var wallet = await SAAS.getWallet();
-    var coinRecords = await SAAS.getWalletLedger();
-    return { isCoin: true, balanceText: walletTokenText(wallet), records: coinRecords };
+    var coinPage = await SAAS.getWalletLedgerPage(1, LEDGER_PAGE_SIZE);
+    return {
+      isCoin: true,
+      balanceText: walletTokenText(wallet),
+      records: coinPage.items || [],
+      page: coinPage.current || 1,
+      pages: coinPage.pages || 0,
+      total: coinPage.total || 0
+    };
   }
   var points = await SAAS.getPoints();
-  var pointRecords = await SAAS.getPointsLedger();
-  return { isCoin: false, balanceText: SAAS.formatPoints(points.balance), records: pointRecords };
+  var pointPage = await SAAS.getPointsLedgerPage(1, LEDGER_PAGE_SIZE);
+  return {
+    isCoin: false,
+    balanceText: SAAS.formatPoints(points.balance),
+    records: pointPage.items || [],
+    page: pointPage.current || 1,
+    pages: pointPage.pages || 0,
+    total: pointPage.total || 0
+  };
+}
+
+/** 明细列表 HTML（第一页与「加载更多」共用同一份行渲染）。 */
+function ledgerListHtml(isCoin, records, page, pages) {
+  if (!records.length) return '<p class="mock-notice">暂无' + (isCoin ? escapeHtml(walletBrand) : '积分') + '明细</p>';
+  var html = records.map(function (r) { return ledgerRow(r, isCoin); }).join('');
+  if (Number(pages) > Number(page)) {
+    html += '<button class="retry-button" type="button" data-ledger-more="' + (isCoin ? 'coin' : 'points') + '">加载更多</button>';
+  }
+  return html;
 }
 
 /** 账本绘制：只更新余额与明细两个节点（静默刷新不动骨架，页面不会闪回加载态）。 */
 function paintLedger(data) {
+  ledgerView = {
+    isCoin: !!data.isCoin,
+    records: Array.isArray(data.records) ? data.records.slice() : [],
+    page: Number(data.page || 1),
+    pages: Number(data.pages || 0),
+  };
   var balEl = document.querySelector('#ledger-balance');
-  var listEl = document.querySelector('#ledger-list');
   if (balEl) balEl.textContent = data.balanceText;
-  if (listEl) {
-    var records = data.records || [];
-    listEl.innerHTML = records.length
-      ? records.map(function (r) { return ledgerRow(r, data.isCoin); }).join('')
-      : '<p class="mock-notice">暂无' + (data.isCoin ? walletBrand + '明细' : '积分明细') + '</p>';
-  }
+  var listEl = document.querySelector('#ledger-list');
+  if (listEl) listEl.innerHTML = ledgerListHtml(ledgerView.isCoin, ledgerView.records, ledgerView.page, ledgerView.pages);
 }
 
+/** 明细骨架（renderPage 的 loadingHtml 出口）：保留 #ledger-balance / #ledger-list 两个锚点供落屏更新。 */
+function ledgerSkeletonHtml(title) {
+  return '<section class="ledger-hero"><span>可用' + escapeHtml(title) + '</span><strong id="ledger-balance">—</strong></section>' +
+    '<div class="section-head"><h2>收支明细</h2></div>' +
+    '<section class="plain-card ledger-list" id="ledger-list"><p class="mock-notice">明细加载中…</p></section>';
+}
+
+/**
+ * 明细页：加载/超时/失败统一走 SaasPageLoad（错误态带 data-retry 可重试），
+ * 不再手写「加载失败」；路由守卫由 renderPage 的 isCurrent 承担。
+ */
 async function renderLedger(type) {
   const isCoin = type !== 'points';
   const title = isCoin ? walletBrand : '积分';
   const route = ledgerRoute(type);
-  app.innerHTML = pageHead(title + '明细', '<span></span>') +
-    '<section class="ledger-hero"><span>可用' + title + '</span><strong id="ledger-balance">—</strong></section>' +
-    '<div class="section-head"><h2>收支明细</h2></div>' +
-    '<section class="plain-card ledger-list" id="ledger-list"><p class="mock-notice">加载中…</p></section>';
+  await SaasPageLoad.renderPage({
+    name: 'ledger',
+    retryRoute: route,
+    errorTitle: title + '明细加载失败',
+    isCurrent: function () { return routeIsCurrent(route); },
+    mount: function (html) { app.innerHTML = pageHead(title + '明细', '<span></span>') + html; },
+    loadingHtml: ledgerSkeletonHtml(title),
+    load: function () { return loadLedgerData(type); },
+    render: paintLedger,
+  });
+}
 
+/** 「加载更多」下一页（用户主动触发；失败只提示，不清空已加载的行）。 */
+async function loadLedgerMore(type) {
+  if (ledgerMoreLoading) return;
+  var isCoin = type !== 'points';
+  var route = ledgerRoute(type);
+  var nextPage = Number(ledgerView.page || 1) + 1;
+  ledgerMoreLoading = true;
   try {
-    var data = await loadLedgerData(type);
-    // 路由守卫：请求期间用户已经点走，这一批数据直接丢弃，不画到别的页面上。
+    var page = isCoin
+      ? await SAAS.getWalletLedgerPage(nextPage, LEDGER_PAGE_SIZE)
+      : await SAAS.getPointsLedgerPage(nextPage, LEDGER_PAGE_SIZE);
+    // 路由守卫：翻页期间用户已经点走，这一页直接丢弃。
     if (!routeIsCurrent(route)) return;
-    paintLedger(data);
-  } catch (e) {
-    if (!routeIsCurrent(route)) return;
-    const listEl = document.querySelector('#ledger-list');
-    if (listEl) listEl.innerHTML = '<p class="mock-notice">加载失败</p>';
+    ledgerView.records = ledgerView.records.concat(Array.isArray(page.items) ? page.items : []);
+    ledgerView.page = Number(page.current || nextPage);
+    ledgerView.pages = Number(page.pages || ledgerView.pages || 0);
+    var listEl = document.querySelector('#ledger-list');
+    if (listEl) listEl.innerHTML = ledgerListHtml(ledgerView.isCoin, ledgerView.records, ledgerView.page, ledgerView.pages);
+  } catch (error) {
+    if (routeIsCurrent(route)) showToast(apiErrorText(error, '加载更多失败，请稍后重试'));
+  } finally {
+    ledgerMoreLoading = false;
   }
 }
 
-/** 静默刷新账本：后台充值 / 抵扣会改余额与明细，回到前台或长时间停留时重取一次。 */
+/** 静默刷新账本：后台充值 / 抵扣会改余额与明细，回到前台或长时间停留时重取一次（重置回第一页）。 */
 function refreshLedger(type) {
   var route = ledgerRoute(type);
   return SaasPageLoad.refreshPage({
@@ -358,7 +437,10 @@ function refreshLedger(type) {
 }
 
 function ledgerTypeText(t) {
-  return { RECHARGE: '充值', CONSUME: '消费', REFUND: '退款', RELEASE: '释放', ADJUST: '调整', REDEEM: '抵扣', REVERSE: '退回' }[t] || t || '—';
+  return {
+    RECHARGE: '充值', CONSUME: '消费', REFUND: '退款', RELEASE: '释放',
+    ADJUST: '调整', REDEEM: '抵扣', REVERSE: '退回', EARN: '获得积分', EXPIRE: '积分过期'
+  }[t] || t || '—';
 }
 
 /**
@@ -965,7 +1047,8 @@ function renderCheckout() {
 }
 
 async function renderPay(orderId, payable) {
-  if (!orderId || !payable) return renderOrders();
+  // 参数缺失（历史深链 / 异常跳转）统一回「我的订单」，不再落到已删除的 demo 订单页。
+  if (!orderId || !payable) { go('my-orders'); return; }
   var methods = [];
   try { methods = await SAAS.getPaymentMethods(); } catch (e) {}
   var currency = SAAS.getCurrency();
@@ -1123,19 +1206,6 @@ function renderTravelOrder(kind, index = 0, fareIndex = 0) {
     </form>`;
 }
 
-function renderSuccess(order) {
-  app.innerHTML = `${pageHead('提交成功', '<span></span>')}
-    <section class="success"><div>✓</div><h1>预订成功</h1><p>订单已生成，我们会提前与您对接确认。</p></section>
-    <section class="plain-card success-summary"><div><span>订单编号</span><strong>${order.number}</strong></div><div><span>预订项目</span><strong>${escapeHtml(order.title)}</strong></div><div><span>预订人</span><strong>${escapeHtml(order.name)}</strong></div><div><span>订单金额</span><strong>${mockMoney(order.amount)}</strong></div><div><span>订单状态</span><strong class="income">${order.status}</strong></div></section>
-    <div class="success-actions"><button class="secondary-button" data-route="orders">查看订单</button><button class="primary-button" data-route="home">返回服务首页</button></div>`;
-}
-
-function renderOrders() {
-  app.innerHTML = `${pageHead('我的订单', '<span></span>')}
-    <div class="chips"><button class="chip active">全部</button><button class="chip">待到店</button><button class="chip">已完成</button><button class="chip">已取消</button></div>
-    ${state.orders.length ? `<section class="order-list">${state.orders.map(order => `<article><header><span>${order.type}</span><strong>${order.status}</strong></header><h3>${escapeHtml(order.title)}</h3><p>订单号 ${order.number}</p><footer><span>${order.createdAt}</span><b>${mockMoney(order.amount)}</b></footer></article>`).join('')}</section>` : emptyState('🧾','还没有订单','从服务首页选择项目并提交后，会显示在这里')}`;
-}
-
 // 后端时间统一是 LocalDateTime（无时区，即门店营业本地时间），展示按字面量取用，不按设备时区平移。
 function formatDateTime(value) { return SaasDateTime.formatStoreDateTime(value); }
 
@@ -1155,6 +1225,7 @@ function orderBadge(status) {
     WAITING_PAYMENT: ['待支付', 'orange'], COMPLETED: ['已完成', 'green'], VOIDED: ['已作废', 'gray'],
     PENDING_CONFIRM: ['待确认', 'orange'], CONFIRMED: ['已确认', 'blue'],
     CHECKED_IN: ['已入住', 'green'], CHECKED_OUT: ['已退房', 'gray'],
+    DUE_OUT: ['待退房', 'orange'],
     CANCELLED: ['已取消', 'gray'], NO_SHOW: ['未到店', 'gray']
   };
   var hit = map[status] || [status || '未知', 'gray'];
@@ -1162,44 +1233,122 @@ function orderBadge(status) {
 }
 
 /**
- * 「我的」页资产（储值币 / 积分**数量**）：首屏单独补一次，也是回到前台时的静默刷新入口。
- * 与首页同一口径（只展示数量、不带货币符号），落地前先过一次路由守卫。
+ * 「我的」页身份与资产（储值币/积分**数量**）：
+ *  - 身份：接线已有 GET /api/v1/business/members/me（SAAS.getMember，懒解析并缓存）展示会员号；
+ *    读取失败/无档案时保持中性文案（不再出现「SaaS 会员 / A」伪身份）。
+ *  - 资产：首屏补一次，也是回到前台时的静默刷新入口；两个接口各自收敛失败，
+ *    失败时保留上次成功值并给内联「重试」（data-retry="my"，复用全局委托），绝不留静默「—」。
  */
-function refreshMyBalances() {
-  SAAS.getWallet().then(function (w) {
-    if (!routeIsCurrent('my')) return;
-    var el = document.querySelector('#my-wallet-coin');
-    // 「我的资产」同样只显示代币**数量**，不带货币符号（储值币不是钱）
-    if (el) el.textContent = walletTokenText(w);
-  });
-  SAAS.getPoints().then(function (p) {
-    if (!routeIsCurrent('my')) return;
-    var el = document.querySelector('#my-wallet-points');
-    if (el) el.textContent = SAAS.formatPoints(p.balance);
+var myBalances = { coin: null, points: null };
+var myIdentity = { memberNo: '', loading: false, loaded: false };
+
+function myAvatarHtml() {
+  return '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-4 3-6 7-6s6.3 2 7 6"/></svg>';
+}
+
+/** 身份副行：会员号拿不到时保持模板里的中性文案，不伪造姓名/头像。 */
+function paintMyIdentity() {
+  var el = document.querySelector('#my-identity-sub');
+  if (!el || !myIdentity.memberNo) return;
+  el.textContent = '会员号 ' + myIdentity.memberNo;
+}
+
+/** 会员号懒加载：成功一次即缓存；失败保持中性文案，下次进入「我的」再试（不阻塞首屏、不重复请求）。 */
+function refreshMyIdentity() {
+  if (!SAAS.live) return Promise.resolve();
+  if (myIdentity.loaded || myIdentity.loading || typeof SAAS.getMember !== 'function') return Promise.resolve();
+  myIdentity.loading = true;
+  return SAAS.getMember().then(function (member) {
+    myIdentity.loading = false;
+    myIdentity.loaded = true;
+    myIdentity.memberNo = member && member.memberNo ? String(member.memberNo) : '';
+    if (routeIsCurrent('my')) paintMyIdentity();
+  }, function (error) {
+    myIdentity.loading = false;
+    if (typeof console !== 'undefined' && console.warn) console.warn('[saas] member profile unavailable', error && error.message);
   });
 }
 
+/** 资产读取：两个接口各自成功/失败，返回结构化结果（不 throw，避免 unhandled rejection）。 */
+function loadMyBalances() {
+  var walletTask = SAAS.getWallet().then(
+    function (wallet) { return { ok: true, text: walletTokenText(wallet) }; },
+    function () { return { ok: false }; }
+  );
+  var pointsTask = SAAS.getPoints().then(
+    function (points) { return { ok: true, text: SAAS.formatPoints(points.balance) }; },
+    function () { return { ok: false }; }
+  );
+  return Promise.all([walletTask, pointsTask]).then(function (results) {
+    return { wallet: results[0], points: results[1] };
+  });
+}
+
+/** 落屏资产：成功值写缓存并更新节点；失败保留上次成功值（首次失败保留「—」），同时给可重试提示。 */
+function paintMyBalances(result) {
+  var failed = 0;
+  if (result.wallet.ok) myBalances.coin = result.wallet.text;
+  else failed += 1;
+  if (result.points.ok) myBalances.points = result.points.text;
+  else failed += 1;
+  var coinEl = document.querySelector('#my-wallet-coin');
+  if (coinEl) coinEl.textContent = myBalances.coin === null ? '—' : myBalances.coin;
+  var pointsEl = document.querySelector('#my-wallet-points');
+  if (pointsEl) pointsEl.textContent = myBalances.points === null ? '—' : myBalances.points;
+  var notice = document.querySelector('#my-balance-notice');
+  if (!notice) return;
+  if (!failed) { notice.hidden = true; return; }
+  notice.hidden = false;
+  var text = document.querySelector('#my-balance-notice-text');
+  if (text) text.textContent = failed === 2 ? '资产加载失败，请检查网络后重试。' : '部分资产加载失败，请检查网络后重试。';
+}
+
+function refreshMyBalances() {
+  return loadMyBalances().then(function (result) {
+    if (!routeIsCurrent('my')) return;
+    paintMyBalances(result);
+  }).catch(function (error) {
+    // loadMyBalances 已把接口失败收敛成结构化结果；这里只做最后一道兜底，绝不留 unhandledrejection。
+    if (typeof console !== 'undefined' && console.warn) console.warn('[saas] my balances failed', error && error.message);
+  });
+}
+
+/** 「我的」菜单行：图标与底部 tab 同一套线性 SVG（不再用 emoji，避免各 ROM 尺寸/彩色位图差异）。 */
+var MY_MENU_ICONS = {
+  reservations: '<rect x="3.5" y="5" width="17" height="16" rx="3"/><path d="M8 3v4M16 3v4M3.5 10h17M8 14h3M8 17.5h5"/>',
+  orders: '<path d="M6.5 3.5h11V21l-2-1.4-1.5 1.4-1.5-1.4L11 21l-1.5-1.4L8 21l-1.5-1.5z"/><path d="M9.5 8h5M9.5 12h5"/>',
+  hotel: '<path d="M3 20V7M3 12h18v8M21 20v-4"/><path d="M7 9h4.5a2 2 0 0 1 2 2v1H7z"/>'
+};
+
+function myMenuItem(route, label, iconKey) {
+  return '<button type="button" data-route="' + route + '">' +
+    '<span class="me-item"><svg viewBox="0 0 24 24" aria-hidden="true">' + MY_MENU_ICONS[iconKey] + '</svg><span>' + escapeHtml(label) + '</span></span>' +
+    '<span class="arrow">›</span></button>';
+}
+
 function renderMy() {
-  var memberId = SAAS.config.memberId || '';
-  var nick = memberId ? ('会员 ' + memberId) : 'SaaS 会员';
+  // 重绘（回前台/重试）时先用上次成功值兜底，避免资产数字从「—」闪一下再回填。
+  var coinText = myBalances.coin === null ? '—' : myBalances.coin;
+  var pointsText = myBalances.points === null ? '—' : myBalances.points;
+  var identityText = myIdentity.memberNo ? '会员号 ' + myIdentity.memberNo : '查看我的预约、订单与资产';
   app.innerHTML =
     '<section class="me-hero">' +
-      '<div class="me-avatar">' + escapeHtml((memberId || 'A').toString().slice(0, 1).toUpperCase()) + '</div>' +
-      '<div class="me-identity"><h2>' + escapeHtml(nick) + '</h2><p>查看我的预约、消费与资产</p></div>' +
+      '<div class="me-avatar" aria-hidden="true">' + myAvatarHtml() + '</div>' +
+      '<div class="me-identity"><h2>我的</h2><p id="my-identity-sub">' + escapeHtml(identityText) + '</p></div>' +
     '</section>' +
     '<div class="me-stats">' +
-      '<button class="me-stat" data-route="ledger/coin"><span>' + walletBrand + '</span><strong id="my-wallet-coin">—</strong></button>' +
-      '<button class="me-stat" data-route="ledger/points"><span>积分</span><strong id="my-wallet-points">—</strong></button>' +
+      '<button class="me-stat" data-route="ledger/coin"><span>' + escapeHtml(walletBrand) + '</span><strong id="my-wallet-coin">' + escapeHtml(coinText) + '</strong></button>' +
+      '<button class="me-stat" data-route="ledger/points"><span>积分</span><strong id="my-wallet-points">' + escapeHtml(pointsText) + '</strong></button>' +
     '</div>' +
     '<section class="me-menu">' +
-      '<button data-route="my-reservations"><span>📅 我的预约</span><span class="arrow">›</span></button>' +
-      '<button data-route="my-hotel-orders"><span>🏨 酒店订单</span><span class="arrow">›</span></button>' +
-      '<button data-route="my-orders"><span>🧾 我的消费</span><span class="arrow">›</span></button>' +
-      '<button data-route="ledger/coin"><span>💰 ' + walletBrand + '明细</span><span class="arrow">›</span></button>' +
-      '<button data-route="ledger/points"><span>⭐ 积分明细</span><span class="arrow">›</span></button>' +
+      myMenuItem('my-reservations', '我的预约', 'reservations') +
+      myMenuItem('my-orders', '我的订单', 'orders') +
+      myMenuItem('my-hotel-orders', '我的酒店订单', 'hotel') +
     '</section>' +
-    '<section class="home-notice"><span>ⓘ</span><p>已连接 SaaS 后端，展示真实预约与消费数据。</p></section>';
+    '<section class="home-notice" id="my-balance-notice" hidden><span>⚠️</span><p id="my-balance-notice-text">资产加载失败，请检查网络后重试。</p>' +
+      '<button class="notice-retry" type="button" data-retry="my">重试</button></section>';
   refreshMyBalances();
+  refreshMyIdentity();
 }
 
 /**
@@ -1285,10 +1434,19 @@ function orderLiveAmount(o) {
   return o.totalAmount || 0;
 }
 
+/** 订单业态中文名：后端返回枚举（KTV / HOTEL），页面不直接展示英文；未知值原样保留、空值显示「消费」。 */
+var ORDER_BUSINESS_LABELS = { KTV: 'KTV', HOTEL: '酒店' };
+function orderBusinessLabel(type) {
+  var key = String(type === null || type === undefined ? '' : type).toUpperCase();
+  if (ORDER_BUSINESS_LABELS[key]) return ORDER_BUSINESS_LABELS[key];
+  return key || '消费';
+}
+
 function orderCard(o) {
   // 酒店订单的展示状态以 booking 状态为准；ord_order.trade_status 可能仍是 DRAFT
   // （酒店预订确认不等于支付订单已结算），不能把 DRAFT 当成用户在“已确认”时看到的状态。
   var displayStatus = o.displayStatus || o.bookingStatus || o.status;
+  var typeLabel = orderBusinessLabel(o.businessType);
   var itemBtn = o.status === 'SERVING'
     ? '<button class="primary-button" data-order-items="' + o.id + '">加服务项</button>'
     : '';
@@ -1298,81 +1456,39 @@ function orderCard(o) {
   var billBtn = o.status !== 'SERVING' && o.status !== 'WAITING_PAYMENT'
     ? '<button class="secondary-button" data-route="order-bill/' + o.id + '">查看账单</button>'
     : '';
+  // 「下单」时间：/me/orders 的持久化投影可能不带 createdAt（后端契约恒 null），
+  // 缺失时整行不渲染，绝不出现「下单：—」。
   return '<article><header><span>' + escapeHtml(o.orderNo || ('#' + o.id)) + '</span>' + orderBadge(displayStatus) + '</header>' +
-    '<h3>' + escapeHtml(o.businessType || 'KTV') + ' · 消费</h3>' +
-    '<p>下单：' + escapeHtml(formatDateTime(o.createdAt)) + '</p>' +
-    '<footer><span>' + escapeHtml(orderBadge(displayStatus).replace(/<[^>]+>/g, '') || '') + '</span><b>' + minorMoney(orderLiveAmount(o), o.currencyCode) + '</b></footer>' + itemBtn + payBtn + billBtn + '</article>';
+    '<h3>' + escapeHtml(typeLabel) + (typeLabel === '消费' ? '' : ' · 消费') + '</h3>' +
+    (o.createdAt ? '<p>下单：' + escapeHtml(formatDateTime(o.createdAt)) + '</p>' : '') +
+    '<footer><span>合计</span><b>' + minorMoney(orderLiveAmount(o), o.currencyCode) + '</b></footer>' + itemBtn + payBtn + billBtn + '</article>';
 }
 
-/** 预约列表数据：首屏与静默刷新共用同一份加载（房态 + 房型取价，同一口径）。 */
 /**
- * 我的预约/消费里的酒店订单：酒店预订是独立资源，不能只读 KTV 预约/订单。
- * 酒店接口失败时保留 KTV 列表，不把整个“我的”页打成错误态。
+ * 「我的预约」只含 KTV 预约（酒店预订在「我的酒店订单」）：
+ * 加载失败仍走 SaasPageLoad 错误态；首次进入且会员档案未创建（404 MEMBER_NOT_FOUND）按空态处理。
  */
-var HOTEL_BOOKING_STATUS = {
-  PENDING: ['待确认', 'orange'],
-  PENDING_CONFIRM: ['待确认', 'orange'],
-  PENDING_PAYMENT: ['待支付', 'orange'],
-  CONFIRMED: ['已确认', 'blue'],
-  CHECKED_IN: ['已入住', 'green'],
-  CHECKED_OUT: ['已退房', 'gray'],
-  CANCELLED: ['已取消', 'gray'],
-  COMPLETED: ['已完成', 'green'],
-  NO_SHOW: ['未到店', 'gray']
-};
-
-var hotelBookingLoadFailed = false;
-
-async function loadHotelBookingsSafe() {
-  hotelBookingLoadFailed = false;
-  try {
-    if (window.SaasHotelBookings && typeof window.SaasHotelBookings.list === 'function') {
-      var rows = await window.SaasHotelBookings.list();
-      return Array.isArray(rows) ? rows : [];
-    }
-  } catch (error) {
-    hotelBookingLoadFailed = true;
-    console.warn('[saas] hotel bookings unavailable', error && error.message);
-  }
-  return [];
-}
-
-function hotelBookingCard(booking) {
-  var status = HOTEL_BOOKING_STATUS[booking.status] || [booking.status || '处理中', 'gray'];
-  var checkIn = booking.checkInDate ? '入住 ' + booking.checkInDate : '入住日期待确认';
-  var checkOut = booking.checkOutDate ? ' · 退房 ' + booking.checkOutDate : '';
-  return '<article><header><span>酒店 ' + escapeHtml(booking.bookingNo || ('#' + booking.id)) + '</span>' +
-    '<span class="badge ' + status[1] + '">' + escapeHtml(status[0]) + '</span></header>' +
-    '<h3>酒店 · ' + escapeHtml(booking.roomType || '房型待确认') + '</h3>' +
-    '<p>' + escapeHtml(checkIn + checkOut) + '</p>' +
-    '<p>房间 ' + escapeHtml(booking.roomNo || '待分配') + '</p>' +
-    '<footer><span>' + escapeHtml(status[0]) + '</span><b>' + minorMoney(booking.amountMinor, booking.currency) + '</b></footer>' +
-    '<button class="secondary-button" data-route="my-hotel-orders">查看酒店订单</button></article>';
-}
-
 async function loadMyReservations() {
   await ensureRoomCache();
-  var items = await SAAS.listReservations();
+  var items;
+  try {
+    items = await SAAS.listReservations();
+  } catch (error) {
+    if (isMemberNotInitialized(error)) return [];
+    throw error;
+  }
   if (!Array.isArray(items)) items = [];
   // 预约按房型取价（历史行按旧包厢取价），与房型列表/预约确认页口径一致。
   await loadKtvRoomPricing(items.map(reservationPricingRef));
-  var hotel = await loadHotelBookingsSafe();
-  return { ktv: items, hotel: hotel };
+  return items;
 }
 
-/** 预约列表绘制：首屏与静默刷新共用同一份渲染。 */
+/** 预约列表绘制：首屏与静默刷新共用同一份渲染（KTV 预约卡片，不再混入酒店预订）。 */
 function paintMyReservations(items) {
   var ktv = Array.isArray(items) ? items : ((items && items.ktv) || []);
-  var hotel = (items && items.hotel) || [];
-  var cards = hotel.filter(function (booking) { return booking.status !== 'CANCELLED'; })
-    .map(hotelBookingCard)
-    .concat(ktv.map(reservationCard));
-  var html = (hotelBookingLoadFailed
-    ? '<section class="home-notice"><span>⚠️</span><p>酒店订单加载失败，KTV 预约仍可正常查看；请稍后重试。</p></section>'
-    : '') +
-    (cards.length
-      ? '<section class="item-list">' + cards.join('') + '</section>'
-      : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里'));
+  var html = ktv.length
+    ? '<section class="item-list">' + ktv.map(reservationCard).join('') + '</section>'
+    : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里');
   app.innerHTML = pageHead('我的预约', '<span></span>') + html;
   bindThumbFallback(app);
 }
@@ -1406,50 +1522,56 @@ function refreshMyReservations() {
   });
 }
 
-/** 「我的消费」列表数据：首屏与静默刷新共用同一份加载。 */
+/**
+ * 「我的订单」列表数据：首屏与静默刷新共用同一份加载。
+ * 过滤 businessType=HOTEL 的行：酒店预订只在「我的酒店订单」展示（同一笔业务不再多处重复），
+ * 因此本页**不再请求**酒店预订接口（接口挂住不会拖慢「我的订单」）；订单行仍保留
+ * `displayStatus || bookingStatus || status` 兜底，兼容旧数据/旧会话里的投影字段。
+ * 首次进入且会员档案未创建（404 MEMBER_NOT_FOUND）按空列表处理，避免新用户「点了必然报错」。
+ */
 async function loadMyOrders() {
-  var orders = await SAAS.listOrders();
-  var bookings = await loadHotelBookingsSafe();
+  var orders;
+  try {
+    orders = await SAAS.listOrders();
+  } catch (error) {
+    if (isMemberNotInitialized(error)) return [];
+    throw error;
+  }
   if (!Array.isArray(orders)) return [];
-  var bookingStatusByOrderId = {};
-  (bookings || []).forEach(function (booking) {
-    if (booking && booking.orderId != null) bookingStatusByOrderId[String(booking.orderId)] = booking.status;
-  });
-  return orders.map(function (order) {
-    var bookingStatus = bookingStatusByOrderId[String(order.id)];
-    return bookingStatus ? Object.assign({}, order, { bookingStatus: bookingStatus }) : order;
+  return orders.filter(function (order) {
+    return String(order.businessType || '').toUpperCase() !== 'HOTEL';
   });
 }
 
 /**
- * 「我的消费」绘制：首屏与静默刷新共用同一份渲染（金额只走 orderCard → orderLiveAmount）。
+ * 「我的订单」绘制：首屏与静默刷新共用同一份渲染（金额只走 orderCard → orderLiveAmount）。
  * 内容没变就不动屏（避免无谓的整块重绘）：静默刷新时屏上不闪、不丢焦点。
  */
 function paintMyOrders(items) {
   var list = Array.isArray(items) ? items : [];
-  var html = pageHead('我的消费', '<span></span>') + (list.length
+  var html = pageHead('我的订单', '<span></span>') + (list.length
     ? '<section class="item-list">' + list.map(orderCard).join('') + '</section>'
-    : emptyState('🧾', '还没有消费单', '到店消费后，账单会显示在这里'));
+    : emptyState('🧾', '还没有订单', '到店消费后，账单会显示在这里；酒店预订请到「我的酒店订单」查看'));
   if (app.innerHTML === html) return;
   app.innerHTML = html;
 }
 
-/** 「我的消费」：接口失败/超时出可重试的错误态，不再把页面留在「加载中…」；带路由守卫。 */
+/** 「我的订单」：接口失败/超时出可重试的错误态，不再把页面留在「加载中…」；带路由守卫。 */
 async function renderMyOrders() {
   var route = 'my-orders';
   await SaasPageLoad.renderPage({
     name: 'my-orders',
     retryRoute: route,
-    errorTitle: '消费单加载失败',
+    errorTitle: '订单加载失败',
     isCurrent: function () { return routeIsCurrent(route); },
-    mount: function (html) { app.innerHTML = pageHead('我的消费', '<span></span>') + html; },
+    mount: function (html) { app.innerHTML = pageHead('我的订单', '<span></span>') + html; },
     load: loadMyOrders,
     render: paintMyOrders,
   });
 }
 
 /**
- * 静默刷新「我的消费」：后台确认自助加项 / 结台 / 收款都会改金额与状态，
+ * 静默刷新「我的订单」：后台确认自助加项 / 结台 / 收款都会改金额与状态，
  * 回到前台或长时间停留时重取一次服务端口径的列表（不自己算金额、不闪加载态、失败保留屏上数据）。
  */
 function refreshMyOrders() {
@@ -1690,6 +1812,18 @@ function render() {
   document.body.classList.remove('login-mode');
   const route = currentRoute();
   const parts = route.split('/');
+  // 深链规范化：带 id / 类型段的路由缺失、非法或多出段时，先跳到规范路由再交给渲染函数。
+  // 渲染函数用「规范化后的 route」做 isCurrent 守卫，hash 不先对齐会让结果被守卫丢弃，
+  // 页面就永远停在加载骨架 /「加载中…」上（#/orders、#/ledger、#/order-bill/abc 等）。
+  if (parts[0] === 'ledger' && (parts.length > 2 || (parts[1] !== 'coin' && parts[1] !== 'points'))) {
+    go('ledger/' + (parts[1] === 'points' ? 'points' : 'coin'));
+    return;
+  }
+  if ((parts[0] === 'order-bill' || parts[0] === 'order-items') && (parts.length > 2 || !(Number(parts[1]) > 0))) {
+    go('my-orders');
+    return;
+  }
+  if (parts[0] === 'real-hotel' && (parts.length > 2 || !(Number(parts[1]) > 0))) { go('service/hotel'); return; }
   const showTabs = route === 'home' || route === 'my';
   document.body.classList.toggle('has-tabs', showTabs);
   document.body.classList.toggle('booking-page', parts[0] === 'book-ktv');
@@ -1708,7 +1842,9 @@ function render() {
   if (route === 'my-orders') return renderMyOrders();
   if (parts[0] === 'order-bill') return renderOrderBill(Number(parts[1] || 0));
   if (parts[0] === 'order-items') return renderOrderItems(Number(parts[1] || 0));
-  if (route === 'orders') return renderOrders();
+  // 历史深链 #/orders 先重定向到 #/my-orders 再渲染：renderMyOrders 用规范路由 'my-orders'
+  // 做 isCurrent 守卫，hash 若仍是 orders 结果会被守卫丢弃、页面停在加载骨架。
+  if (route === 'orders') { go('my-orders'); return; }
   if (route === 'cart') return renderCart();
   if (route === 'checkout') return renderCheckout();
   if (parts[0] === 'pay') return renderPay(parts[1], Number(parts[2] || 0));
@@ -1736,7 +1872,7 @@ function render() {
     if (service.kind === 'business') return renderKtvBooking();
     return renderTravelSearch(service.id);
   }
-  renderHome();
+  renderNotFound();
 }
 
 document.addEventListener('click', event => {
@@ -1779,6 +1915,9 @@ document.addEventListener('click', event => {
     else go(retryRoute);
     return;
   }
+  // 明细页「加载更多」：用户主动翻页（不重置已加载行，失败只 toast 提示）。
+  const ledgerMore = event.target.closest('[data-ledger-more]');
+  if (ledgerMore) { loadLedgerMore(ledgerMore.dataset.ledgerMore); return; }
   const realHotel = event.target.closest('[data-real-hotel]');
   if (realHotel) { go('real-hotel/' + realHotel.dataset.realHotel); return; }
   if (event.target.closest('[data-hotel-quote]')) { quoteRealHotel(Number(currentRoute().split('/').pop())); return; }
@@ -1788,6 +1927,8 @@ document.addEventListener('click', event => {
   const tab = event.target.closest('[data-tab]');
   if (tab) { go(tab.dataset.tab); return; }
   if (event.target.closest('[data-back]')) {
+    // 「我的」子页返回固定回「我的」：从 App 外深链进入时 history.back() 会直接退出应用。
+    if (isMySectionRoute(currentRoute())) { go('my'); return; }
     if (location.hash && location.hash !== '#/home' && history.length > 1) history.back();
     else go('home');
     return;

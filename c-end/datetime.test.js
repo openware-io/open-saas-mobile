@@ -61,6 +61,17 @@ test('后端 LocalDateTime 按字面量展示，带时区串换算到门店时�
 test('SaasDateTime 对外暴露的日期时间 API 固定', async () => {
   const api = await loadDateTime()
   expect(Object.keys(api).sort()).toEqual(
-    ['STORE_OFFSET_MINUTES', 'dateOffset', 'formatStoreDateTime', 'localDateString', 'storeOffsetDateTime'],
+    ['STORE_OFFSET_MINUTES', 'dateOffset', 'formatStoreDate', 'formatStoreDateTime', 'localDateString', 'storeOffsetDateTime'],
   )
+})
+
+test('纯日期按字面量展示 M月D日（酒店入离日期等 LocalDate 字段，不经设备时区平移）', async () => {
+  const { formatStoreDate } = await loadDateTime()
+  expect(formatStoreDate('2026-10-30')).toBe('10月30日')
+  expect(formatStoreDate('2026-01-05')).toBe('1月5日')
+  // 带时间的 LocalDateTime 同样只取日期部分（不额外补时分）
+  expect(formatStoreDate('2026-09-18T19:30:00')).toBe('9月18日')
+  expect(formatStoreDate('')).toBe('—')
+  expect(formatStoreDate(null)).toBe('—')
+  expect(formatStoreDate('not-a-date')).toBe('not-a-date')
 })

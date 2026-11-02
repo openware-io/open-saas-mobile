@@ -61,6 +61,18 @@
   }
 
   /**
+   * 门店**纯日期**展示「M月D日」（酒店入离日期等后端 LocalDate 字段）：
+   * 按字面量取 YYYY-MM-DD，不用 new Date() 按设备时区重新解释；非日期串原样返回。
+   */
+  function formatStoreDate(value) {
+    if (value === null || value === undefined || value === '') return '—';
+    var text = String(value);
+    var hit = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);
+    if (!hit) return text;
+    return Number(hit[2]) + '月' + Number(hit[3]) + '日';
+  }
+
+  /**
    * 门店营业时间出参展示「M月D日 HH:mm」：
    * - 无时区串（后端 LocalDateTime，门店本地）按字面量取用，不按设备时区平移；
    * - 带时区串（Z / ±HH:MM）先换算到门店时区（UTC+8）再展示。
@@ -84,6 +96,7 @@
     localDateString: localDateString,
     dateOffset: dateOffset,
     storeOffsetDateTime: storeOffsetDateTime,
-    formatStoreDateTime: formatStoreDateTime
+    formatStoreDateTime: formatStoreDateTime,
+    formatStoreDate: formatStoreDate
   };
 })(window);

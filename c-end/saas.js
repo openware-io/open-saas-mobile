@@ -298,6 +298,8 @@
     }
     memberCache = {
       memberId: memberId,
+      // 会员号：C 端「我的」身份区展示用（非 PII；手机号等隐私字段不在本接口返回）
+      memberNo: s && s.memberNo ? String(s.memberNo) : '',
       wallet: s && s.wallet ? {
         availableAmount: asString(s.wallet.availableAmount !== undefined ? s.wallet.availableAmount : s.wallet.available_amount, '0'),
         frozenAmount: asString(s.wallet.frozenAmount !== undefined ? s.wallet.frozenAmount : s.wallet.frozen_amount, '0'),
@@ -891,6 +893,12 @@
     DEFAULT_WALLET_BRAND: DEFAULT_WALLET_BRAND,
 
     /**
+     * C 端会员档案（当前签名账号，懒解析并缓存）：`{ memberId, memberNo, wallet, points }`。
+     * GET /api/v1/business/members/me；「我的」身份区用它展示会员号（失败时页面保持中性回退）。
+     */
+    getMember: resolveMember,
+
+    /**
      * 币种：全局唯一来源 = context select 响应 currencyCode（缺省 USD），切换后全站符号同步变化。
      * 金额展示一律走 formatFen/formatYuan（内部转发 c-end/money.js），不得自建符号表。
      */
@@ -1126,6 +1134,51 @@
       }
     },
 
+    /**
+     * 钱包账本**分页**（「储值币明细」加载更多用）：GET /api/v1/me/wallet/ledger?page=&pageSize=。
+     * 后端分页外形是 Page（records/total/size/current/pages），这里归一化成 `{ items, total, current, pages }`，
+     * 页面只消费归一化字段，不再丢弃 total/pages（否则超过一页会静默截断）。
+     */
+    async getWalletLedgerPage(page, pageSize) {
+      var pageNo = Number(page) > 0 ? Math.floor(Number(page)) : 1;
+      var size = Number(pageSize) > 0 ? Math.floor(Number(pageSize)) : 20;
+      var empty = { items: [], total: 0, current: pageNo, pages: 0 };
+      try {
+        if (!live) return fallbackOrThrow(function () { return empty; });
+        var d = unwrap(await request('GET', '/api/v1/me/wallet/ledger?page=' + pageNo + '&pageSize=' + size));
+        return {
+          items: await withLedgerTokens(toList(d)),
+          total: Number(d && d.total || 0) || 0,
+          current: Number(d && d.current || pageNo) || pageNo,
+          pages: Number(d && d.pages || 0) || 0
+        };
+      } catch (e) {
+        return fallbackOrThrow(function () { return empty; }, e);
+      }
+    },
+
+    /**
+     * 积分账本**分页**：GET /api/v1/me/points?page=&pageSize=（响应同时含 account 与 records）。
+     * 归一化为 `{ items, total, current, pages }`，积分类型按后端闭集（ADJUST/REDEEM/EARN/REVERSE）在页面翻译。
+     */
+    async getPointsLedgerPage(page, pageSize) {
+      var pageNo = Number(page) > 0 ? Math.floor(Number(page)) : 1;
+      var size = Number(pageSize) > 0 ? Math.floor(Number(pageSize)) : 20;
+      var empty = { items: [], total: 0, current: pageNo, pages: 0 };
+      try {
+        if (!live) return fallbackOrThrow(function () { return empty; });
+        var d = unwrap(await request('GET', '/api/v1/me/points?page=' + pageNo + '&pageSize=' + size));
+        return {
+          items: toList(d && d.records ? d.records : d),
+          total: Number(d && d.total || 0) || 0,
+          current: Number(d && d.current || pageNo) || pageNo,
+          pages: Number(d && d.pages || 0) || 0
+        };
+      } catch (e) {
+        return fallbackOrThrow(function () { return empty; }, e);
+      }
+    },
+
     /** 消费账单：GET /api/v1/business/orders/{id}/bill */
     async getBill(orderId) {
       try {
@@ -1207,7 +1260,7 @@
       }
     },
 
-    /** 我的消费/订单：GET /api/v1/me/orders */
+    /** 我的订单：GET /api/v1/me/orders（含全部业态；C 端页面在「我的订单」过滤 HOTEL 行） */
     async listOrders() {
       try {
         if (!live) return fallbackOrThrow([]);

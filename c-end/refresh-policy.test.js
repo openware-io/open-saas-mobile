@@ -501,7 +501,7 @@ test('导航回到这些页面：仍走原有 hashchange → render 路径重新
   await harness.api.render()
   expect(countCalls(calls, ORDERS_URL)).toBe(0)
 
-  // 后台改价后，用户从「我的」点进「我的消费」：hashchange 触发 render → 同一套 renderPage 重新取数
+  // 后台改价后，用户从「我的」点进「我的订单」：hashchange 触发 render → 同一套 renderPage 重新取数
   current = order({ liveTotalAmount: 10150, status: 'COMPLETED' })
   harness.sandbox.location.hash = '#/my-orders'
   harness.dispatch('hashchange')
