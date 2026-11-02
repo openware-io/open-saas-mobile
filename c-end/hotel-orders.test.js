@@ -32,6 +32,14 @@ test('酒店卡片由「我的预约」复用：无独立页面、取消条件�
   expect(app).toContain("if (route === 'my-hotel-orders') { go('my-reservations'); return; }")
 })
 
+test('酒店卡在统一预约列表里不重复画底部横线（避免两横中间空白带）', async () => {
+  const css = await readFile(new URL('./styles.css', import.meta.url), 'utf8')
+  // .item-list footer 的通用边框/内边距会覆盖 .hotel-order-foot；必须有更高优先级的归零规则。
+  expect(css).toMatch(/\.item-list \.hotel-order-foot \{[^}]*border-top:\s*0/)
+  expect(css).toMatch(/\.item-list \.hotel-order-foot \{[^}]*margin-top:\s*0/)
+  expect(css).toMatch(/\.item-list \.hotel-order-foot \{[^}]*padding-top:\s*0/)
+})
+
 test('酒店列表返回时优先显示缓存并带重试入口', async () => {
   const source = await readFile(new URL('./hotel-real.js', import.meta.url), 'utf8')
   expect(source).toContain('hotelListCache')

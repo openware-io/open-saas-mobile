@@ -832,6 +832,15 @@ body.has-tabs #app { padding-bottom: calc(82px + env(safe-area-inset-bottom)); }
   justify-content: space-between;
   gap: 12px;
 }
+/* 统一「我的预约」用 .item-list 承载酒店卡；通用 .item-list footer 的
+   border-top + padding-top + margin-top 会叠在 .hotel-order-dates 的
+   border-bottom 之后，形成「两横中间空一条」的空白带。酒店卡的横线只由
+   日期行本身表达，底部不再重复画线。 */
+.item-list .hotel-order-foot {
+  border-top: 0;
+  margin-top: 0;
+  padding-top: 0;
+}
 .hotel-order-price {
   color: var(--danger);
   font-size: 18px;
