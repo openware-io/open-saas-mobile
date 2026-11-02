@@ -1239,7 +1239,11 @@
       }
     },
 
-    /** 我的预约：GET /api/v1/me/reservations */
+    /**
+     * 我的预约：GET /api/v1/me/reservations。
+     * 后端新契约返回统一列表 `[{type:'KTV', ktv: ReservationView}, {type:'HOTEL', hotel: HotelBookingPo}]`；
+     * 旧格式（无 type 的 ReservationView 数组）由 app.js 的 normalizeReservationItems 兼容归一。
+     */
     async listReservations() {
       try {
         if (!live) return fallbackOrThrow([]);

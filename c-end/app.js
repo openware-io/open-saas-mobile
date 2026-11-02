@@ -1343,7 +1343,6 @@ function renderMy() {
     '<section class="me-menu">' +
       myMenuItem('my-reservations', '我的预约', 'reservations') +
       myMenuItem('my-orders', '我的订单', 'orders') +
-      myMenuItem('my-hotel-orders', '我的酒店订单', 'hotel') +
     '</section>' +
     '<section class="home-notice" id="my-balance-notice" hidden><span>⚠️</span><p id="my-balance-notice-text">资产加载失败，请检查网络后重试。</p>' +
       '<button class="notice-retry" type="button" data-retry="my">重试</button></section>';
@@ -1465,8 +1464,28 @@ function orderCard(o) {
 }
 
 /**
- * 「我的预约」只含 KTV 预约（酒店预订在「我的酒店订单」）：
- * 加载失败仍走 SaasPageLoad 错误态；首次进入且会员档案未创建（404 MEMBER_NOT_FOUND）按空态处理。
+ * 「我的预约」统一列表归一化（后端新契约 + 旧格式兼容）。
+ *
+ * 新契约：`[{ type:'KTV', ktv: ReservationView }, { type:'HOTEL', hotel: HotelBookingPo }]`；
+ * 旧格式（滚动发布期）：数组项没有 `type`，就是 ReservationView → 按 KTV 归一，避免白屏。
+ * 列表顺序保持接口顺序（后端已倒序），前端不再自己重排。
+ */
+function normalizeReservationItems(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(function (item) {
+    if (!item || typeof item !== 'object') return null;
+    var type = String(item.type || '').toUpperCase();
+    if (type === 'HOTEL') return { type: 'HOTEL', hotel: item.hotel || item.booking || item };
+    if (type === 'KTV') return { type: 'KTV', ktv: item.ktv || item.reservation || item };
+    // 旧格式：没有 type 的 ReservationView
+    return { type: 'KTV', ktv: item };
+  }).filter(Boolean);
+}
+
+/**
+ * 「我的预约」：统一展示 KTV 预约与酒店预订（同一接口返回两组 wrapper）。
+ * 加载失败仍走 SaasPageLoad 错误态；会员档案未创建（404 MEMBER_NOT_FOUND）按空态处理。
+ * KTV 项继续走 reservationCard（需要房型取价），酒店项复用 hotel-real.js 的 hotelOrderCard。
  */
 async function loadMyReservations() {
   await ensureRoomCache();
@@ -1477,18 +1496,29 @@ async function loadMyReservations() {
     if (isMemberNotInitialized(error)) return [];
     throw error;
   }
-  if (!Array.isArray(items)) items = [];
-  // 预约按房型取价（历史行按旧包厢取价），与房型列表/预约确认页口径一致。
-  await loadKtvRoomPricing(items.map(reservationPricingRef));
-  return items;
+  var rows = normalizeReservationItems(items);
+  var ktvItems = rows
+    .filter(function (row) { return row.type === 'KTV'; })
+    .map(function (row) { return row.ktv; })
+    .filter(Boolean);
+  // 只为 KTV 行取房型价（历史行按旧包厢取价），与房型列表/预约确认页口径一致。
+  if (ktvItems.length) await loadKtvRoomPricing(ktvItems.map(reservationPricingRef));
+  return rows;
 }
 
-/** 预约列表绘制：首屏与静默刷新共用同一份渲染（KTV 预约卡片，不再混入酒店预订）。 */
+/** 预约列表绘制：首屏与静默刷新共用同一份渲染（按接口顺序混排 KTV 卡与酒店卡）。 */
 function paintMyReservations(items) {
-  var ktv = Array.isArray(items) ? items : ((items && items.ktv) || []);
-  var html = ktv.length
-    ? '<section class="item-list">' + ktv.map(reservationCard).join('') + '</section>'
-    : emptyState('📅', '还没有预约', '从服务首页预约包厢后，会显示在这里');
+  var rows = Array.isArray(items) ? items : ((items && items.rows) || []);
+  var cards = rows.map(function (row) {
+    if (row && row.type === 'HOTEL') {
+      // hotelOrderCard 定义在 hotel-real.js（defer 加载顺序保证页面渲染时已就绪）；测试桩缺失时跳过该卡。
+      return typeof hotelOrderCard === 'function' ? hotelOrderCard(row.hotel) : '';
+    }
+    return reservationCard(row && row.ktv ? row.ktv : row);
+  }).filter(Boolean);
+  var html = cards.length
+    ? '<section class="item-list">' + cards.join('') + '</section>'
+    : emptyState('📅', '还没有预约', '从服务首页预约后，会显示在这里');
   app.innerHTML = pageHead('我的预约', '<span></span>') + html;
   bindThumbFallback(app);
 }
@@ -1524,9 +1554,8 @@ function refreshMyReservations() {
 
 /**
  * 「我的订单」列表数据：首屏与静默刷新共用同一份加载。
- * 过滤 businessType=HOTEL 的行：酒店预订只在「我的酒店订单」展示（同一笔业务不再多处重复），
- * 因此本页**不再请求**酒店预订接口（接口挂住不会拖慢「我的订单」）；订单行仍保留
- * `displayStatus || bookingStatus || status` 兜底，兼容旧数据/旧会话里的投影字段。
+ * 展示**全部业态**（KTV / 酒店 / …）：`/me/orders` 返回什么就展示什么，业态由卡片标签中文化（orderCard）。
+ * 订单行保留 `displayStatus || bookingStatus || status` 兜底，兼容旧数据/旧会话里的投影字段。
  * 首次进入且会员档案未创建（404 MEMBER_NOT_FOUND）按空列表处理，避免新用户「点了必然报错」。
  */
 async function loadMyOrders() {
@@ -1537,10 +1566,7 @@ async function loadMyOrders() {
     if (isMemberNotInitialized(error)) return [];
     throw error;
   }
-  if (!Array.isArray(orders)) return [];
-  return orders.filter(function (order) {
-    return String(order.businessType || '').toUpperCase() !== 'HOTEL';
-  });
+  return Array.isArray(orders) ? orders : [];
 }
 
 /**
@@ -1551,7 +1577,7 @@ function paintMyOrders(items) {
   var list = Array.isArray(items) ? items : [];
   var html = pageHead('我的订单', '<span></span>') + (list.length
     ? '<section class="item-list">' + list.map(orderCard).join('') + '</section>'
-    : emptyState('🧾', '还没有订单', '到店消费后，账单会显示在这里；酒店预订请到「我的酒店订单」查看'));
+    : emptyState('🧾', '还没有订单', '到店消费后，账单会显示在这里'));
   if (app.innerHTML === html) return;
   app.innerHTML = html;
 }
@@ -1845,6 +1871,8 @@ function render() {
   // 历史深链 #/orders 先重定向到 #/my-orders 再渲染：renderMyOrders 用规范路由 'my-orders'
   // 做 isCurrent 守卫，hash 若仍是 orders 结果会被守卫丢弃、页面停在加载骨架。
   if (route === 'orders') { go('my-orders'); return; }
+  // 「我的酒店订单」已并入「我的预约」统一列表：旧链接保留可用（重定向，不再有独立页面/菜单）。
+  if (route === 'my-hotel-orders') { go('my-reservations'); return; }
   if (route === 'cart') return renderCart();
   if (route === 'checkout') return renderCheckout();
   if (parts[0] === 'pay') return renderPay(parts[1], Number(parts[2] || 0));
@@ -1861,7 +1889,6 @@ function render() {
       ? renderKtvBookForm(Number(parts[2] || 0))
       : renderKtvBookFormFromRoom(Number(parts[1] || 0));
   }
-  if (route === 'my-hotel-orders') return renderRealHotelOrders();
   if (parts[0] === 'real-hotel') return renderRealHotelDetail(Number(parts[1] || 0));
   if (parts[0] === 'service') {
     const service = serviceById(parts[1]);

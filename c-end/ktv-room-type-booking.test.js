@@ -275,8 +275,8 @@ test('历史预约行（只有 resourceId 无房型）回退旧包厢名并标�
   expect(appCode).toContain('SaasReservationRoom.roomTypeLabel(r, room)')
   expect(appCode).toContain('SaasReservationRoom.allocationText(r, room)')
   expect(appCode).toContain('SaasReservationRoom.HISTORICAL_TEXT')
-  // 预约列表按房型取价（历史行才按旧包厢取价）
-  expect(appCode).toContain('items.map(reservationPricingRef)')
+  // 预约列表按房型取价（历史行才按旧包厢取价）；「我的预约」统一列表只对 KTV 行取价
+  expect(appCode).toContain('ktvItems.map(reservationPricingRef)')
   // 历史行能从房态反查到房型时，取价也走房型（与房型列表/确认页同口径）
   expect(appCode).toContain('var room = ktvRoomCache[r.resourceId]')
   expect(appCode).toContain('room && room.roomTypeId != null ? room.roomTypeId : null')

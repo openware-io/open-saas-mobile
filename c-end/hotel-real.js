@@ -8,7 +8,7 @@ function hotelMoney(minor, currency) {
  *
  * <p>客户端超时只套在**读请求（GET）**上：写请求（提交预订 / 取消）若被客户端判超时，
  * 服务端可能其实已经成功，前端再报「失败」会诱导顾客重复提交；写请求因此不设客户端超时，
- * 结果以「我的酒店订单」页的最终状态为准。读请求超时由 SaasPageLoad.withTimeout 兜底，
+ * 结果以「我的预约」页的最终状态为准。读请求超时由 SaasPageLoad.withTimeout 兜底，
  * 接口挂住不会让页面永远停在「加载中…」。
  */
 async function hotelApi(path, options) {
@@ -32,11 +32,6 @@ async function hotelApi(path, options) {
     && typeof window.SaasPageLoad.withTimeout === 'function';
   return withTimeout ? window.SaasPageLoad.withTimeout(pending) : pending;
 }
-
-// 「我的」页要复用酒店订单；只暴露只读列表，不复制订单渲染逻辑。
-window.SaasHotelBookings = {
-  list: function () { return hotelApi('/business/hotel/bookings'); }
-};
 
 function bindHotelCoverFallback(root) {
   if (!root) return;
@@ -65,7 +60,7 @@ function hotelCards(hotels) {
 }
 
 async function renderRealHotelList() {
-  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-hotel-orders">我的酒店订单</button>') +
+  app.innerHTML = pageHead('酒店', '<button class="head-action" data-route="my-reservations">我的预约</button>') +
     '<section class="list" id="real-hotel-list"><p class="empty">酒店加载中…</p></section>';
   var list = document.querySelector('#real-hotel-list');
   if (list && hotelListCache.length) { list.innerHTML = hotelCards(hotelListCache); bindHotelCoverFallback(list); }
@@ -216,7 +211,7 @@ async function bookRealHotel(hotelId) {
     app.innerHTML = pageHead('预订成功', '<span></span>') +
       '<section class="success"><div>✓</div><h1>预订已提交</h1><p>' + escapeHtml(booking.bookingNo) + '</p>' +
       '<p>应付 ' + hotelMoney(booking.amountMinor, booking.currency) + ' · 状态 ' + escapeHtml(hotelOrderStatus(booking.status)[0]) + '</p></section>' +
-      '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" data-route="my-hotel-orders">查看订单</button></footer>';
+      '<div class="submit-spacer"></div><footer class="action-bar"><button class="primary-button" data-route="my-reservations">查看我的预约</button></footer>';
   } catch (error) {
     showToast(apiErrorText(error, '预订失败，请稍后重试'));
   }
@@ -249,7 +244,8 @@ function canCancelHotelOrder(status) {
   return status !== 'CANCELLED' && status !== 'CHECKED_OUT' && status !== 'COMPLETED';
 }
 
-/** 单张酒店订单卡片（入住/退房日期走 SaasDateTime 的日期出口：M月D日）。 */
+/** 单张酒店订单卡片（入住/退房日期走 SaasDateTime 的日期出口：M月D日）。
+ *  由「我的预约」统一列表复用（KTV 预约卡 + 酒店卡混排）；不再有独立的「我的酒店订单」页。 */
 function hotelOrderCard(order) {
   var status = hotelOrderStatus(order.status);
   var checkIn = order.checkInDate ? SaasDateTime.formatStoreDate(order.checkInDate) : '待确认';
@@ -265,35 +261,6 @@ function hotelOrderCard(order) {
     '</footer></article>';
 }
 
-/** 列表绘制（SaasPageLoad.renderPage 的 render 出口；首屏与重试共用）。 */
-function paintHotelOrderList(orders) {
-  var list = Array.isArray(orders) ? orders : [];
-  var html = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') +
-    (list.length
-      ? '<section class="list">' + list.map(hotelOrderCard).join('') + '</section>'
-      : emptyState('🏨', '暂无酒店订单', '去酒店页选择房型并提交预订'));
-  if (app.innerHTML === html) return;
-  app.innerHTML = html;
-}
-
-/**
- * 「我的酒店订单」：加载/超时/失败统一走 SaasPageLoad（错误态带 data-retry 可重试），
- * 不再手写加载中占位；错误文案走 api-errors（不把内部权限文案直出给顾客）。
- */
-async function renderRealHotelOrders() {
-  var route = 'my-hotel-orders';
-  await SaasPageLoad.renderPage({
-    name: route,
-    retryRoute: route,
-    errorTitle: '酒店订单加载失败',
-    isCurrent: function () { return routeIsCurrent(route); },
-    mount: function (html) {
-      app.innerHTML = pageHead('我的酒店订单', '<button class="head-action" data-route="service/hotel">继续预订</button>') + html;
-    },
-    load: function () { return window.SaasHotelBookings.list(); },
-    render: paintHotelOrderList,
-  });
-}
 document.addEventListener('click', function (event) {
   var button = event.target.closest('[data-hotel-picker]');
   if (!button || !window.SaasPicker) return;
@@ -312,7 +279,8 @@ document.addEventListener('click', async function (event) {
   try {
     await hotelApi('/business/hotel/bookings/' + encodeURIComponent(button.getAttribute('data-cancel-booking')) + '/cancel', { method: 'POST' });
     showToast('预订已取消');
-    await renderRealHotelOrders();
+    // 取消后重渲染当前页（通常是「我的预约」统一列表）；不再有独立酒店订单页。
+    render();
   } catch (error) {
     showToast(apiErrorText(error, '取消失败，请稍后重试'));
   }

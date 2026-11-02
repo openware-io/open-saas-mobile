@@ -4,11 +4,12 @@ import { expect, test } from 'vitest'
 
 /**
  * 「我的」相关行为回归（真实 c-end 脚本 + 受控 fetch + 最小 DOM 桩）：
- *   ① 我的订单：/me/orders 同时返回 KTV 与 HOTEL → 只渲染 KTV 一张卡，且不再请求酒店接口；
+ *   ① 我的订单：/me/orders 同时返回 KTV 与 HOTEL → 两张卡都展示（业态标签中文），且不请求酒店接口；
  *   ② 我的资产：先成功、后 503 → 保留上次成功值 + 可重试提示可见（不退回「—」）；
  *   ③ 储值明细：pages=2 → 点「加载更多」请求 page=2 且行数增加；
  *   ④ 深链 #/orders → 重定向 #/my-orders 并渲染「我的订单」（不再停在加载骨架）；
- *   ⑤ 深链规范化：#/ledger、#/order-bill/abc、#/order-items/abc、#/real-hotel/abc 先跳规范路由。
+ *   ⑤ 深链规范化：#/ledger、#/order-bill/abc、#/order-items/abc、#/real-hotel/abc 先跳规范路由；
+ *   ⑥ 我的预约统一列表：新 wrapper（KTV+HOTEL）混排、旧格式按 KTV 兼容、#/my-hotel-orders 重定向。
  *
  * 说明：与 refresh-policy.test.js 用同一套「最小 DOM 桩」思路；本文件只覆盖本轮修复点。
  */
@@ -47,7 +48,7 @@ const fail = (status, code, message) => ({
 async function loadCend(fetchImpl) {
   const sources = {}
   for (const name of ['money.js', 'datetime.js', 'business-hours.js', 'api-errors.js', 'page-load.js',
-    'reservation-room.js', 'saas.js', 'app.js']) {
+    'reservation-room.js', 'saas.js', 'app.js', 'hotel-real.js']) {
     sources[name] = await read(name)
   }
   const appEl = createAppElement()
@@ -91,6 +92,8 @@ async function loadCend(fetchImpl) {
     vm.runInContext(sources[name], sandbox, { filename: name })
   }
   vm.runInContext(sources['app.js'] + '\n;__Saas_TEST__.render = render;', sandbox, { filename: 'app.js' })
+  // 酒店卡在 hotel-real.js（「我的预约」统一列表复用 hotelOrderCard），按 index.html 的加载顺序追加
+  vm.runInContext(sources['hotel-real.js'], sandbox, { filename: 'hotel-real.js' })
   sandbox.SAAS.activate()
 
   return {
@@ -122,9 +125,9 @@ const orderRow = (over = {}) => Object.assign({
   createdAt: '2026-10-30T19:30:00', totalAmount: 6150, liveTotalAmount: 6150, currencyCode: 'CNY',
 }, over)
 
-// —— ① 我的订单只渲染 KTV 卡，且不请求酒店接口 ——
+// —— ① 我的订单展示全部业态，且不请求酒店接口 ——
 
-test('我的订单：/me/orders 同时返回 KTV+HOTEL 时只渲染 1 张 KTV 卡，且不请求酒店接口', async () => {
+test('我的订单：/me/orders 同时返回 KTV+HOTEL 时两张卡都展示（业态中文），且不请求酒店接口', async () => {
   const calls = []
   const harness = await loadCend(async (url) => {
     const target = String(url)
@@ -142,9 +145,9 @@ test('我的订单：/me/orders 同时返回 KTV+HOTEL 时只渲染 1 张 KTV �
   await harness.api.render()
 
   const html = harness.app.innerHTML
-  expect((html.match(/<article>/g) || []).length).toBe(1)
+  expect((html.match(/<article/g) || []).length).toBe(2)
   expect(html).toContain('KTV · 消费')
-  expect(html).not.toContain('酒店 · 消费')
+  expect(html).toContain('酒店 · 消费')
   expect(calls.some((url) => url.includes('/business/hotel/bookings'))).toBe(false)
 })
 
@@ -158,6 +161,68 @@ test('我的订单：createdAt 缺失时不渲染「下单：—」', async () =
   harness.sandbox.location.hash = '#/my-orders'
   await harness.api.render()
   expect(harness.app.innerHTML).not.toContain('下单：')
+})
+
+// —— ⑥ 我的预约统一列表：新 wrapper（KTV+HOTEL）混排、旧格式兼容、旧深链重定向 ——
+
+const KTV_RESERVATION = {
+  id: 11, reservationNo: 'R-11', status: 'CONFIRMED',
+  startAt: '2026-10-30T19:30:00', partySize: 4, contact: '张女士 6688', roomTypeName: '小包',
+}
+const HOTEL_BOOKING = {
+  id: 21, bookingNo: 'HT-21', status: 'PENDING_CONFIRM',
+  checkInDate: '2026-10-30', checkOutDate: '2026-11-01',
+  amountMinor: 36800, currency: 'CNY', roomType: '豪华大床房', roomNo: '待分配',
+}
+function reservationFetch(reservations) {
+  return async (url) => {
+    const target = String(url)
+    if (target.includes('/api/v1/me/reservations')) return json(reservations)
+    if (target.includes('/business/resources')) return json([])
+    if (target.includes('/business/ktv/pricing')) return json({})
+    if (target.includes('/business/tenant/config')) return json({ brandName: 'SaaS 币', ratio: 100 })
+    return json({})
+  }
+}
+
+test('我的预约：新契约 wrapper 同时返回 KTV+HOTEL → 两种卡片按接口顺序混排', async () => {
+  const harness = await loadCend(reservationFetch([
+    { type: 'KTV', ktv: KTV_RESERVATION },
+    { type: 'HOTEL', hotel: HOTEL_BOOKING },
+  ]))
+  harness.sandbox.location.hash = '#/my-reservations'
+  await harness.api.render()
+
+  const html = harness.app.innerHTML
+  expect((html.match(/<article/g) || []).length).toBe(2)
+  expect(html).toContain('reservation-room')     // KTV 预约卡
+  expect(html).toContain('hotel-order-card')     // 酒店预订卡
+  expect(html).toContain('待确认')               // 酒店状态中文化
+  expect(html).not.toContain('暂无')
+})
+
+test('我的预约：旧格式（无 type 的 ReservationView 数组）按 KTV 归一，不白屏', async () => {
+  const harness = await loadCend(reservationFetch([KTV_RESERVATION]))
+  harness.sandbox.location.hash = '#/my-reservations'
+  await harness.api.render()
+
+  const html = harness.app.innerHTML
+  expect((html.match(/<article/g) || []).length).toBe(1)
+  expect(html).toContain('reservation-room')
+  expect(html).not.toContain('hotel-order-card')
+})
+
+test('#/my-hotel-orders 旧深链：重定向到 #/my-reservations，不再有独立页面', async () => {
+  const harness = await loadCend(reservationFetch([{ type: 'HOTEL', hotel: HOTEL_BOOKING }]))
+  harness.sandbox.location.hash = '#/my-hotel-orders'
+  await harness.api.render()
+  expect(harness.sandbox.location.hash).toBe('#/my-reservations')
+
+  // 再渲染一次（模拟 hashchange）：应出「我的预约」统一列表，而不是「加载中」
+  await harness.api.render()
+  expect(harness.app.innerHTML).toContain('我的预约')
+  expect(harness.app.innerHTML).toContain('hotel-order-card')
+  expect(harness.app.innerHTML).not.toContain('加载中')
 })
 
 // —— ② 资产先成功后失败：保留上次值 + 重试提示 ——
@@ -290,3 +355,5 @@ test('深链规范化：缺失/非法的类型段或 id 段先跳规范路由，
   await harness.api.render()
   expect(harness.sandbox.location.hash).toBe('#/service/hotel')
 })
+
+
